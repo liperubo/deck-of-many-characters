@@ -15,7 +15,7 @@ import { useReducer, useState } from "react"
 import { characterReducer } from "@/domain/character-reducer"
 import { initialState } from "@/domain/character-state"
 import Dots from "@/components/Dots"
-import { AttributeKey, attributeKeys } from "@/domain/attribute"
+import { AttributeCategory, attributeCategories } from "@/domain/stat"
 
 export default function CharacterDetailPage() {
 
@@ -70,7 +70,7 @@ export default function CharacterDetailPage() {
                       {character.name.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                    
+
 
                   <h1 className="mt-4 text-2xl font-bold text-foreground">{character.name}</h1>
                   <p className="text-muted-foreground">{character.role}</p>
@@ -135,21 +135,40 @@ export default function CharacterDetailPage() {
                   <CollapsibleContent>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {attributeKeys.map((attr: AttributeKey) => (
-                          <Card key={attr} className="bg-secondary/50">
-                            <CardContent className="p-4 text-center">
-                              <Label htmlFor="strength-dots" className="mb-2 block">{attr.charAt(0).toUpperCase() + attr.slice(1)}</Label>
-                              <Dots
-                                value={state.attributes[attr].value}
-                                onChange={(v) =>
-                                  dispatch({
-                                    type: "SET_STAT",
-                                    section: "attributes",
-                                    key: attr,
-                                    value: v,
-                                  })
-                                }
-                              />
+                        {attributeCategories.map((category) => (
+                          <Card key={category} className="bg-secondary/50">
+                            <CardContent className="p-4">
+                              <h3 className="mb-4 text-center font-semibold capitalize">
+                                {category}
+                              </h3>
+
+                              <div className="space-y-3">
+                                {Object.entries(state.attributes[category]).map(
+                                  ([statKey, stat]) => (
+                                    <div
+                                      key={statKey}
+                                      className="flex items-center justify-between"
+                                    >
+                                      <Label className="capitalize">
+                                        {statKey.replace(/_/g, " ")}
+                                      </Label>
+
+                                      <Dots
+                                        value={stat.value}
+                                        onChange={(v) =>
+                                          dispatch({
+                                            type: "SET_STAT",
+                                            section: "attributes",
+                                            category,
+                                            key: statKey,
+                                            value: v,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                  )
+                                )}
+                              </div>
                             </CardContent>
                           </Card>
                         ))}
@@ -224,7 +243,7 @@ export default function CharacterDetailPage() {
                 </Card>
               </Collapsible>
             </div>
-        </Card>
+          </Card>
         </main>
       </div>
     </div>

@@ -1,49 +1,71 @@
 // src/domain/character-reducer.ts
 import { Action } from "./action"
 import { CharacterState } from "./character-state"
+import { Stats } from "./stat"
 
 export function characterReducer(state: CharacterState, action: Action): CharacterState {
   switch (action.type) {
-	case "SET_FIELD":
-	  return { ...state, [action.field]: action.value }
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value }
 
-	case "SET_STAT": {
-		const section = action.section
+    case "SET_STAT": {
+      // sections com categoria (attributes, abilities)
+      if (action.category) {
+        return {
+          ...state,
+          [action.section]: {
+            ...state[action.section],
+            [action.category]: {
+              ...(state[action.section] as Record<string, any>)[action.category],
+              [action.key]: {
+                ...((state[action.section] as Record<string, any>)[action.category] as Record<string, any>)[action.key],
+                value: action.value,
+              },
+            },
+          },
+        }
+      }
 
-		return {
-			...state,
-			[section]: {
-				...state[section],
-				[action.key as keyof typeof state[typeof section]]: {
-					...state[section][action.key as keyof typeof state[typeof section]],
-					value: action.value
-				}
-			}
-		}
-	}
+      // sections flat (spheres, merits, etc)
+      return {
+        ...state,
+        [action.section]: {
+          ...state[action.section],
+          [action.key]: {
+            ...(state[action.section] as Record<string, any>)[action.key],
+            value: action.value,
+          },
+        },
+      }
+    }
 
-	case "ADD_STAT":
-	  return {
-		...state,
-		[action.section]: {
-		  ...state[action.section],
-		  [action.key]: { value: 0, observation: null }
-		}
-	  }
+    case "ADD_STAT": {
+      if (action.section === "attributes") {
+        return state
+      }
 
-	case "TOGGLE_SECTION":
-	  return {
-		...state,
-		activeSections: state.activeSections.includes(action.section)
-		  ? state.activeSections.filter(s => s !== action.section)
-		  : [...state.activeSections, action.section]
-	  }
+      return {
+        ...state,
+        [action.section]: {
+          ...(state[action.section] as Stats),
+          [action.key]: { value: 0, observation: null },
+        },
+      }
+    }
 
-	case "INIT":
-	  return action.payload
+    case "TOGGLE_SECTION":
+      return {
+        ...state,
+        activeSections: state.activeSections.includes(action.section)
+          ? state.activeSections.filter(s => s !== action.section)
+          : [...state.activeSections, action.section]
+      }
 
-	default:
-	  return state
+    case "INIT":
+      return action.payload
+
+    default:
+      return state
   }
 }
 
@@ -52,7 +74,7 @@ export function characterReducer(state: CharacterState, action: Action): Charact
 <input
   value={state.name}
   onChange={e =>
-	dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
+  dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
   }
 />
 */
