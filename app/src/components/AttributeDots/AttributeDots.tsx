@@ -1,18 +1,19 @@
+//src/components/AttributeDots/AttributeDots.tsx
 "use client";
 
 import "./AttributeDots.css";
-import { clampAttribute } from "@/domain/attributes";
+import { toggleAttribute } from "@/domain/attributes";
 
-type AttributeDotsProps = {
+type Props = {
   value: number;
   maxDots?: number;
   onChange?: (value: number) => void;
 };
 
-const AttributeDots = ({ value, maxDots = 5, onChange }: AttributeDotsProps) => {
+const AttributeDots = ({ value, maxDots = 5, onChange }: Props) => {
   const handleClick = (index: number) => {
-    const newValue = index + 1 === value ? 0 : index + 1;
-    onChange?.(clampAttribute(newValue, maxDots));
+    const next = toggleAttribute(value, index + 1, maxDots);
+    onChange?.(next);
   };
 
   return (
@@ -20,12 +21,9 @@ const AttributeDots = ({ value, maxDots = 5, onChange }: AttributeDotsProps) => 
       {Array.from({ length: maxDots }).map((_, i) => (
         <span
           key={i}
-          role="button"
-          tabIndex={0}
-          aria-pressed={i < value}
           className={`dot ${i < value ? "filled" : ""}`}
           onClick={() => handleClick(i)}
-          onKeyDown={(e) => e.key === "Enter" && handleClick(i)}
+          tabIndex={0}
         />
       ))}
     </div>
