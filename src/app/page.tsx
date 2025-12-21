@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar"
 import Header from "@/components/Header"
-import AttributeDots from "@/components/AttributeDots";
 import CharacterCard from "@/components/CharacterCard";
 
 const mockCharacters = [
@@ -29,7 +28,7 @@ export default function Home() {
 
         <main className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <AttributeDots value={strength} onChange={setStrength} />
+            {/* <AttributeDots value={strength} onChange={setStrength} /> */}
             {mockCharacters.map((character) => (
               <CharacterCard key={character.id} {...character} />
             ))}

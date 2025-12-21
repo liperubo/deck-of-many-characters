@@ -1,4 +1,4 @@
-// src/domain/attributes.js
+// src/domain/dots.ts
 export function clampAttribute(value: number, max: number) {
   return Math.max(0, Math.min(value, max));
 }

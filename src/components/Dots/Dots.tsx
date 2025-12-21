@@ -1,8 +1,8 @@
-//src/components/AttributeDots/AttributeDots.tsx
+//src/components/Dots/Dots.tsx
 "use client";
 
-import "./AttributeDots.css";
-import { toggleAttribute } from "@/domain/attributes";
+import "./Dots.css";
+import { toggleAttribute } from "@/domain/dots";
 
 type Props = {
   value: number;
@@ -10,7 +10,7 @@ type Props = {
   onChange?: (value: number) => void;
 };
 
-const AttributeDots = ({ value, maxDots = 5, onChange }: Props) => {
+const Dots = ({ value, maxDots = 5, onChange }: Props) => {
   const handleClick = (index: number) => {
     const next = toggleAttribute(value, index + 1, maxDots);
     onChange?.(next);
@@ -30,4 +30,4 @@ const AttributeDots = ({ value, maxDots = 5, onChange }: Props) => {
   );
 };
 
-export default AttributeDots;
+export default Dots;
