@@ -11,3 +11,5 @@ export const attributeCategories = ["physical", "social", "mental"] as const
 
 export type AbilityCategory = "talents" | "skills" | "knowledges"
 export const abilityCategories = ["talents", "skills", "knowledges"] as const
+
+export type FlatStatSection = "spheres" | "magetraits" | "backgrounds" | "merits" | "flaws"

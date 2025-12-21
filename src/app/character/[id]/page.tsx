@@ -11,16 +11,27 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ChevronDown, Edit, Save } from "lucide-react"
-import { useReducer, useState } from "react"
+import { useEffect, useReducer, useState } from "react"
 import { characterReducer } from "@/domain/character-reducer"
 import { initialState } from "@/domain/character-state"
 import Dots from "@/components/Dots"
-import { AttributeCategory, attributeCategories } from "@/domain/stat"
+import { AttributeCategory, abilityCategories, attributeCategories } from "@/domain/stat"
+import { loadCharacters, saveCharacters } from "@/storage/characterStorage"
 
 export default function CharacterDetailPage() {
-
-  const [state, dispatch] = useReducer(characterReducer, initialState)
+  const [state, dispatch] = useReducer(characterReducer, loadCharacters())
   const [isEditing, setIsEditing] = useState(false)
+
+  useEffect(() => {
+    const cached = loadCharacters()
+    if (cached) {
+      dispatch({ type: "INIT", payload: cached })
+    }
+  }, [])
+
+  useEffect(() => {
+    saveCharacters(state)
+  }, [state])
 
   // Mock data
   const character = {
@@ -33,24 +44,6 @@ export default function CharacterDetailPage() {
     background: "Criminal",
     alignment: "Chaotic Neutral",
   }
-
-  const attributes = [
-    { name: "Strength", value: 10, modifier: "+0" },
-    { name: "Dexterity", value: 18, modifier: "+4" },
-    { name: "Constitution", value: 14, modifier: "+2" },
-    { name: "Intelligence", value: 13, modifier: "+1" },
-    { name: "Wisdom", value: 12, modifier: "+1" },
-    { name: "Charisma", value: 16, modifier: "+3" },
-  ]
-
-  const skills = [
-    { name: "Stealth", proficient: true, value: "+8" },
-    { name: "Sleight of Hand", proficient: true, value: "+8" },
-    { name: "Acrobatics", proficient: true, value: "+8" },
-    { name: "Deception", proficient: true, value: "+7" },
-    { name: "Insight", proficient: false, value: "+1" },
-    { name: "Investigation", proficient: true, value: "+5" },
-  ]
 
   return (
     <div className="dark min-h-screen bg-background">
@@ -182,26 +175,49 @@ export default function CharacterDetailPage() {
                 <Card>
                   <CardHeader>
                     <CollapsibleTrigger className="flex w-full items-center justify-between hover:opacity-80">
-                      <CardTitle>Skills</CardTitle>
+                      <CardTitle>Abilities</CardTitle>
                       <ChevronDown className="h-5 w-5 transition-transform duration-200 data-[state=open]:rotate-180" />
                     </CollapsibleTrigger>
                   </CardHeader>
                   <CollapsibleContent>
                     <CardContent>
-                      <div className="space-y-2">
-                        {skills.map((skill) => (
-                          <div
-                            key={skill.name}
-                            className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`h-2 w-2 rounded-full ${skill.proficient ? "bg-primary" : "bg-muted"}`} />
-                              <span className="text-sm font-medium text-foreground">{skill.name}</span>
-                            </div>
-                            <Badge variant="outline" className="font-mono">
-                              {skill.value}
-                            </Badge>
-                          </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {abilityCategories.map((category) => (
+                          <Card key={category} className="bg-secondary/50">
+                            <CardContent className="p-4">
+                              <h3 className="mb-4 text-center font-semibold capitalize">
+                                {category}
+                              </h3>
+
+                              <div className="space-y-3">
+                                {Object.entries(state.abilities[category]).map(
+                                  ([statKey, stat]) => (
+                                    <div
+                                      key={statKey}
+                                      className="flex items-center justify-between"
+                                    >
+                                      <Label className="capitalize">
+                                        {statKey.replace(/_/g, " ")}
+                                      </Label>
+
+                                      <Dots
+                                        value={stat.value}
+                                        onChange={(v) =>
+                                          dispatch({
+                                            type: "SET_STAT",
+                                            section: "abilities",
+                                            category,
+                                            key: statKey,
+                                            value: v,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     </CardContent>

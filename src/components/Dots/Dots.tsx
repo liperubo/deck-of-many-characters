@@ -1,7 +1,6 @@
 //src/components/Dots/Dots.tsx
 "use client";
 
-import "./Dots.css";
 import { toggleDot } from "@/domain/dots";
 
 type Props = {
@@ -17,15 +16,23 @@ const Dots = ({ value, maxDots = 5, onChange }: Props) => {
   };
 
   return (
-    <div className="dots">
-      {Array.from({ length: maxDots }).map((_, i) => (
-        <span
-          key={i}
-          className={`dot ${i < value ? "filled" : ""}`}
-          onClick={() => handleClick(i)}
-          tabIndex={0}
-        />
-      ))}
+    <div className="inline-flex gap-1 cursor-pointer">
+      {Array.from({ length: maxDots }).map((_, i) => {
+        const filled = i < value
+
+        return (
+          <span
+            key={i}
+            onClick={() => onChange?.(i + 1 === value ? 0 : i + 1)}
+            className={[
+              "h-3.5 w-3.5 rounded-full border transition-colors",
+              filled
+                ? "bg-foreground border-foreground hover:bg-foreground/80"
+                : "border-foreground/60 hover:bg-foreground/40"
+            ].join(" ")}
+          />
+        )
+      })}
     </div>
   );
 };

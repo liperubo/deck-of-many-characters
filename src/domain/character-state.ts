@@ -1,5 +1,4 @@
 // src/domain/character-state.ts
-// import { Attributes } from "./attribute";
 import { Stats } from "./stat";
 import { ActiveSections } from "./section";
 
@@ -50,10 +49,47 @@ export const initialState: CharacterState = {
   },
 
   abilities: {
-    talents: {},
-    skills: {},
-    knowledges: {},
+    talents: {
+      alertness: { value: 0, observation: null },
+      art: { value: 0, observation: null },
+      athletics: { value: 0, observation: null },
+      awareness: { value: 0, observation: null },
+      brawl: { value: 0, observation: null },
+      empathy: { value: 0, observation: null },
+      expression: { value: 0, observation: null },
+      intimidation: { value: 0, observation: null },
+      leadership: { value: 0, observation: null },
+      streetwise: { value: 0, observation: null },
+      subterfuge: { value: 0, observation: null }
+    },
+    skills: {
+      crafts: { value: 0, observation: null },
+      drive: { value: 0, observation: null },
+      etiquette: { value: 0, observation: null },
+      firearms: { value: 0, observation: null },
+      martial_arts: { value: 0, observation: null },
+      meditation: { value: 0, observation: null },
+      melee: { value: 0, observation: null },
+      research: { value: 0, observation: null },
+      stealth: { value: 0, observation: null },
+      survival: { value: 0, observation: null },
+      technology: { value: 0, observation: null }
+    },
+    knowledges: {
+      academics: { value: 0, observation: null },
+      computer: { value: 0, observation: null },
+      cosmology: { value: 0, observation: null },
+      enigmas: { value: 0, observation: null },
+      esoterica: { value: 0, observation: null },
+      investigation: { value: 0, observation: null },
+      law: { value: 0, observation: null },
+      medicine: { value: 0, observation: null },
+      occult: { value: 0, observation: null },
+      politics: { value: 0, observation: null },
+      science: { value: 0, observation: null }
+    }
   },
+
   spheres: {},
   magetraits: {},
   backgrounds: {},
@@ -63,3 +99,4 @@ export const initialState: CharacterState = {
   tags: [],
   activeSections: ["attributes", "abilities"] satisfies ActiveSections
 }
+

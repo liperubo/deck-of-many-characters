@@ -9,7 +9,6 @@ export function characterReducer(state: CharacterState, action: Action): Charact
       return { ...state, [action.field]: action.value }
 
     case "SET_STAT": {
-      // sections com categoria (attributes, abilities)
       if (action.category) {
         return {
           ...state,
@@ -26,7 +25,6 @@ export function characterReducer(state: CharacterState, action: Action): Charact
         }
       }
 
-      // sections flat (spheres, merits, etc)
       return {
         ...state,
         [action.section]: {

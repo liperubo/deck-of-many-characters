@@ -1,7 +1,7 @@
 // src/domain/action.ts
 import { CharacterState } from "./character-state";
 import { SectionKey, StatSectionKey, TextSectionKey } from "./section";
-import { AbilityCategory, AttributeCategory } from "./stat";
+import { AbilityCategory, AttributeCategory, FlatStatSection } from "./stat";
 
 export type Action =
   | { type: "INIT"; payload: CharacterState }
@@ -17,7 +17,7 @@ export type Action =
         | "backgrounds"
         | "merits"
         | "flaws"
-      category?: string
+      category?: AbilityCategory | AttributeCategory | null
       key: string
       value: number
     }
