@@ -2,7 +2,7 @@
 "use client";
 
 import "./Dots.css";
-import { toggleAttribute } from "@/domain/dots";
+import { toggleDot } from "@/domain/dots";
 
 type Props = {
   value: number;
@@ -12,7 +12,7 @@ type Props = {
 
 const Dots = ({ value, maxDots = 5, onChange }: Props) => {
   const handleClick = (index: number) => {
-    const next = toggleAttribute(value, index + 1, maxDots);
+    const next = toggleDot(value, index + 1, maxDots);
     onChange?.(next);
   };
 

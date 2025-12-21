@@ -1,5 +1,5 @@
 // src/domain/section.ts
-export type SectionKey =
+export type StatSectionKey =
   | "attributes"
   | "abilities"
   | "spheres"
@@ -7,15 +7,11 @@ export type SectionKey =
   | "backgrounds"
   | "merits"
   | "flaws"
+
+export type TextSectionKey =
+  | "tags"
   | "lore"
 
-export const sectionKeys: SectionKey[] = [
-    "attributes",
-    "abilities",
-    "spheres",
-    "magetraits",
-    "backgrounds",
-    "merits",
-    "flaws",
-    "lore"
-]
+export type SectionKey = StatSectionKey | TextSectionKey
+
+export type ActiveSections = SectionKey[]

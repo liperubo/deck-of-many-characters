@@ -1,4 +1,4 @@
-// src/domain/stats.ts
+// src/domain/stat.ts
 export type Stat = {
   value: number
   observation?: string | null

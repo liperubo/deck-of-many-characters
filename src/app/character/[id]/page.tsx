@@ -11,9 +11,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ChevronDown, Edit, Save } from "lucide-react"
-import { useState } from "react"
+import { useReducer, useState } from "react"
+import { characterReducer } from "@/domain/character-reducer"
+import { initialState } from "@/domain/character-state"
+import Dots from "@/components/Dots"
+import { AttributeKey, attributeKeys } from "@/domain/attribute"
 
 export default function CharacterDetailPage() {
+
+  const [state, dispatch] = useReducer(characterReducer, initialState)
   const [isEditing, setIsEditing] = useState(false)
 
   // Mock data
@@ -54,71 +60,70 @@ export default function CharacterDetailPage() {
         <Header title="Character Details" />
 
         <main className="p-8">
-        <Card className="gap-6 p-0">
-            {/* Left Column - Basic Info */}
+          <Card className="gap-6 p-0">
             <Card className="lg:col-span-3 space-y-6" id="character-header">
-                <CardContent className="pt-6 space-y-4">
-                  <div className="flex flex-col items-center text-center">
-                    <Avatar className="h-32 w-32 border-4 border-primary/20">
-                      <AvatarImage src={character.avatar || "/placeholder.svg"} alt={character.name} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-3xl">
-                        {character.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex flex-col items-center text-center">
+                  <Avatar className="h-32 w-32 border-4 border-primary/20">
+                    <AvatarImage src={character.avatar || "/placeholder.svg"} alt={character.name} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-3xl">
+                      {character.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                    
 
-                    <h1 className="mt-4 text-2xl font-bold text-foreground">{character.name}</h1>
-                    <p className="text-muted-foreground">{character.role}</p>
+                  <h1 className="mt-4 text-2xl font-bold text-foreground">{character.name}</h1>
+                  <p className="text-muted-foreground">{character.role}</p>
 
-                    <div className="mt-4 flex gap-2">
-                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                        Lvl {character.level}
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
-                        {character.status}
-                      </Badge>
-                    </div>
+                  <div className="mt-4 flex gap-2">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                      Lvl {character.level}
+                    </Badge>
+                    <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
+                      {character.status}
+                    </Badge>
                   </div>
+                </div>
 
-                  <div className="space-y-3 pt-4 border-t border-border">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Race</span>
-                      <span className="text-sm font-medium text-foreground">{character.race}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Background</span>
-                      <span className="text-sm font-medium text-foreground">{character.background}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Alignment</span>
-                      <span className="text-sm font-medium text-foreground">{character.alignment}</span>
-                    </div>
+                <div className="space-y-3 pt-4 border-t border-border">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Race</span>
+                    <span className="text-sm font-medium text-foreground">{character.race}</span>
                   </div>
-
-                  <div className="pt-4">
-                    <Button
-                      className="w-full"
-                      variant={isEditing ? "default" : "outline"}
-                      onClick={() => setIsEditing(!isEditing)}
-                    >
-                      {isEditing ? (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          Save Changes
-                        </>
-                      ) : (
-                        <>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Character
-                        </>
-                      )}
-                    </Button>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Background</span>
+                    <span className="text-sm font-medium text-foreground">{character.background}</span>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Alignment</span>
+                    <span className="text-sm font-medium text-foreground">{character.alignment}</span>
+                  </div>
+                </div>
 
-            {/* Right Column - Attributes & Skills */}
+                <div className="pt-4">
+                  <Button
+                    className="w-full"
+                    variant={isEditing ? "default" : "outline"}
+                    onClick={() => setIsEditing(!isEditing)}
+                  >
+                    {isEditing ? (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </>
+                    ) : (
+                      <>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Character
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+
             <div className="lg:col-span-2 space-y-6">
-              {/* Attributes */}
               <Collapsible defaultOpen>
                 <Card>
                   <CardHeader>
@@ -130,12 +135,21 @@ export default function CharacterDetailPage() {
                   <CollapsibleContent>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {attributes.map((attr) => (
-                          <Card key={attr.name} className="bg-secondary/50">
+                        {attributeKeys.map((attr: AttributeKey) => (
+                          <Card key={attr} className="bg-secondary/50">
                             <CardContent className="p-4 text-center">
-                              <p className="text-sm text-muted-foreground">{attr.name}</p>
-                              <p className="text-3xl font-bold text-foreground mt-1">{attr.value}</p>
-                              <p className="text-sm text-primary font-medium">{attr.modifier}</p>
+                              <Label htmlFor="strength-dots" className="mb-2 block">{attr.charAt(0).toUpperCase() + attr.slice(1)}</Label>
+                              <Dots
+                                value={state.attributes[attr].value}
+                                onChange={(v) =>
+                                  dispatch({
+                                    type: "SET_STAT",
+                                    section: "attributes",
+                                    key: attr,
+                                    value: v,
+                                  })
+                                }
+                              />
                             </CardContent>
                           </Card>
                         ))}
@@ -145,7 +159,6 @@ export default function CharacterDetailPage() {
                 </Card>
               </Collapsible>
 
-              {/* Skills */}
               <Collapsible defaultOpen>
                 <Card>
                   <CardHeader>
@@ -177,7 +190,6 @@ export default function CharacterDetailPage() {
                 </Card>
               </Collapsible>
 
-              {/* Notes */}
               <Collapsible defaultOpen>
                 <Card>
                   <CardHeader>
