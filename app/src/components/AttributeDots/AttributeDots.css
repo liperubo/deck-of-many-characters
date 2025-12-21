@@ -1,0 +1,38 @@
+.dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid #333;
+  background-color: transparent;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+@media (hover: hover) {
+  .dot:hover {
+    background-color: #aaa;
+  }
+
+  .dot.filled:hover {
+    background-color: #555;
+  }
+}
+
+.dot.filled {
+  background-color: #333;
+}
+
+.dot:active {
+  transform: scale(0.9);
+}
+
+.dot:focus-visible {
+  outline: 2px solid #555;
+  outline-offset: 2px;
+}
