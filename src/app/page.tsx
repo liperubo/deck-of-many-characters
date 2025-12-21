@@ -4,6 +4,17 @@ import { useState } from "react";
 import Sidebar from "@/components/Sidebar"
 import Header from "@/components/Header"
 import AttributeDots from "@/components/AttributeDots";
+import CharacterCard from "@/components/CharacterCard";
+
+const mockCharacters = [
+  {
+    id: "1",
+    name: "Aria Shadowblade",
+    avatar: "/elf-rogue-female.jpg",
+    role: "Rogue / Assassin",
+    level: 12,
+    status: "active" as const,
+  }];
 
 export default function Home() {
   const [isNewCharacterOpen, setIsNewCharacterOpen] = useState(false)
@@ -19,9 +30,9 @@ export default function Home() {
         <main className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AttributeDots value={strength} onChange={setStrength} />
-            {/* {mockCharacters.map((character) => (
+            {mockCharacters.map((character) => (
               <CharacterCard key={character.id} {...character} />
-            ))} */}
+            ))}
           </div>
         </main>
       </div>
