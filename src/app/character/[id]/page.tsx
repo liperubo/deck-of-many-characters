@@ -78,7 +78,7 @@ const statLabels = {
   alertness: { pt: "Prontidão", en: "Alertness" },
   art: { pt: "Arte", en: "Art" },
   athletics: { pt: "Atletismo", en: "Athletics" },
-  awareness: { pt: "Prontidão", en: "Awareness" },
+  awareness: { pt: "Consciência", en: "Awareness" },
   arete: { pt: "Arete", en: "Arete" },
   willpower: { pt: "Força de Vontade", en: "Willpower" },
   quintessence: { pt: "Quintessência", en: "Quintessence" },
