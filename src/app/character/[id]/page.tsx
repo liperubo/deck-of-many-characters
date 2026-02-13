@@ -18,6 +18,9 @@ import { loadCharacterSheets, saveCharacterSheets } from "@/storage/characterSto
 import { SectionKey } from "@/domain/section"
 import ThemeSwitch from "@/components/ThemeSwitch"
 
+const sphereList = ["correspondence", "life", "prime", "entropy", "matter", "spirit", "forces", "mind", "time"] as const
+const commonBackgrounds = ["allies", "influence", "status", "contacts", "mentor", "fame", "resources"] as const
+
 const optionalSections: { key: SectionKey; labelPt: string; labelEn: string }[] = [
   { key: "spheres", labelPt: "Esferas", labelEn: "Spheres" },
   { key: "magetraits", labelPt: "Traços de Mago", labelEn: "Mage Traits" },
@@ -48,6 +51,7 @@ const messages = {
     openSections: "Seções",
     language: "Idioma",
     deleteSheet: "Deletar ficha",
+    backgroundsCommon: "Antecedentes comuns",
   },
   en: {
     back: "Back",
@@ -69,8 +73,11 @@ const messages = {
     openSections: "Sections",
     language: "Language",
     deleteSheet: "Delete sheet",
+    backgroundsCommon: "Common backgrounds",
   },
 } as const
+
+type Locale = keyof typeof messages
 
 function FlatSectionEditor({
   title,
@@ -82,7 +89,7 @@ function FlatSectionEditor({
   emptyLabel,
 }: {
   title: string
-  section: FlatStatSection
+  section: Exclude<FlatStatSection, "backgrounds" | "spheres">
   data: Record<string, { value: number }>
   onAdd: (section: FlatStatSection, key: string) => void
   onUpdate: (section: FlatStatSection, key: string, value: number) => void
@@ -98,11 +105,7 @@ function FlatSectionEditor({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex gap-2">
-          <Input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={`${addLabel} ${title}`}
-          />
+          <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`${addLabel} ${title}`} />
           <Button
             size="sm"
             onClick={() => {
@@ -140,11 +143,16 @@ export default function CharacterDetailPage() {
   const sheets = useMemo(() => loadCharacterSheets(), [])
   const selected = sheets.find((sheet) => sheet.id === characterId)
   const [tagDraft, setTagDraft] = useState("")
-  const [locale, setLocale] = useState<"pt" | "en">("pt")
+  const [locale, setLocale] = useState<Locale>("pt")
   const [isSectionsModalOpen, setIsSectionsModalOpen] = useState(false)
+  const [backgroundDraft, setBackgroundDraft] = useState<(typeof commonBackgrounds)[number]>(commonBackgrounds[0])
+  const [abilityDrafts, setAbilityDrafts] = useState<Record<(typeof abilityCategories)[number], string>>({
+    talents: "",
+    skills: "",
+    knowledges: "",
+  })
 
   const [state, dispatch] = useReducer(characterReducer, selected?.data ?? cloneBaseCharacter())
-
   const t = messages[locale]
 
   useEffect(() => {
@@ -165,6 +173,12 @@ export default function CharacterDetailPage() {
     saveCharacterSheets(remainingSheets)
     router.push("/")
   }
+
+  const sectionLabels = [
+    { key: "attributes", labelPt: "Atributos", labelEn: "Attributes" },
+    { key: "abilities", labelPt: "Habilidades", labelEn: "Abilities" },
+    ...optionalSections,
+  ]
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 md:px-8">
@@ -187,7 +201,7 @@ export default function CharacterDetailPage() {
               <Label>{t.language}</Label>
               <select
                 value={locale}
-                onChange={(event) => setLocale(event.target.value as "pt" | "en")}
+                onChange={(event) => setLocale(event.target.value as Locale)}
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="en">🇺🇸 English</option>
@@ -208,9 +222,7 @@ export default function CharacterDetailPage() {
           <p className="text-sm text-muted-foreground">{t.autosave}</p>
 
           <Card>
-            <CardHeader>
-              <CardTitle>{t.identity}</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>{t.identity}</CardTitle></CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div><Label>{t.name}</Label><Input value={state.name} onChange={(e) => dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })} /></div>
               <div><Label>{t.concept}</Label><Input value={state.concept} onChange={(e) => dispatch({ type: "SET_FIELD", field: "concept", value: e.target.value })} /></div>
@@ -249,6 +261,25 @@ export default function CharacterDetailPage() {
                   <Card key={category} className="bg-secondary/40">
                     <CardHeader><CardTitle className="text-base capitalize">{category}</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
+                      <div className="flex gap-2">
+                        <Input
+                          value={abilityDrafts[category]}
+                          onChange={(event) => setAbilityDrafts((prev) => ({ ...prev, [category]: event.target.value }))}
+                          placeholder={`${t.add} ${category}`}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const normalized = abilityDrafts[category].trim().toLowerCase().replace(/\s+/g, "_")
+                            if (!normalized || state.abilities[category][normalized]) return
+                            dispatch({ type: "SET_STAT", section: "abilities", category, key: normalized, value: 0 })
+                            setAbilityDrafts((prev) => ({ ...prev, [category]: "" }))
+                          }}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+
                       {Object.entries(state.abilities[category]).map(([key, stat]) => (
                         <div key={key} className="flex items-center justify-between gap-2 text-sm">
                           <Label className="capitalize">{key.replace(/_/g, " ")}</Label>
@@ -263,13 +294,62 @@ export default function CharacterDetailPage() {
           )}
 
           {state.activeSections.includes("spheres") && (
-            <FlatSectionEditor title={locale === "pt" ? "Esferas" : "Spheres"} section="spheres" data={state.spheres} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
+            <Card>
+              <CardHeader><CardTitle>{locale === "pt" ? "Esferas" : "Spheres"}</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                {sphereList.map((sphere) => (
+                  <div key={sphere} className="flex items-center justify-between gap-2 text-sm">
+                    <Label className="capitalize">{sphere.replace(/_/g, " ")}</Label>
+                    <Dots
+                      value={state.spheres[sphere]?.value ?? 0}
+                      onChange={(value) => dispatch({ type: "SET_STAT", section: "spheres", key: sphere, value })}
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           )}
+
+          {state.activeSections.includes("backgrounds") && (
+            <Card>
+              <CardHeader><CardTitle>{locale === "pt" ? "Antecedentes" : "Backgrounds"}</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <select
+                    value={backgroundDraft}
+                    onChange={(event) => setBackgroundDraft(event.target.value as (typeof commonBackgrounds)[number])}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    {commonBackgrounds.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                  <Button
+                    onClick={() => {
+                      if (state.backgrounds[backgroundDraft]) return
+                      dispatch({ type: "SET_STAT", section: "backgrounds", key: backgroundDraft, value: 0 })
+                    }}
+                  >
+                    {t.add}
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: Allies, Influence, Status, Contacts, Mentor, Fame, Resources.</p>
+
+                <div className="space-y-3">
+                  {Object.entries(state.backgrounds).map(([key, stat]) => (
+                    <div key={key} className="flex items-center justify-between gap-2 text-sm">
+                      <Label className="capitalize">{key.replace(/_/g, " ")}</Label>
+                      <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {state.activeSections.includes("magetraits") && (
             <FlatSectionEditor title={locale === "pt" ? "Traços de Mago" : "Mage Traits"} section="magetraits" data={state.magetraits} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
-          )}
-          {state.activeSections.includes("backgrounds") && (
-            <FlatSectionEditor title={locale === "pt" ? "Antecedentes" : "Backgrounds"} section="backgrounds" data={state.backgrounds} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
           )}
           {state.activeSections.includes("merits") && (
             <FlatSectionEditor title={locale === "pt" ? "Méritos" : "Merits"} section="merits" data={state.merits} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
@@ -324,11 +404,7 @@ export default function CharacterDetailPage() {
               <Button variant="outline" size="sm" onClick={() => setIsSectionsModalOpen(false)}>×</Button>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
-              {[
-                { key: "attributes", labelPt: "Atributos", labelEn: "Attributes" },
-                { key: "abilities", labelPt: "Habilidades", labelEn: "Abilities" },
-                ...optionalSections,
-              ].map((section) => {
+              {sectionLabels.map((section) => {
                 const active = state.activeSections.includes(section.key as SectionKey)
                 return (
                   <Button
