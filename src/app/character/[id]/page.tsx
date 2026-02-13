@@ -194,6 +194,25 @@ const messages = {
 
 type Locale = keyof typeof messages
 
+const backgroundsWiki = {
+  resources: {
+    en: [
+      "Sufficient. You can maintain a typical residence in the style of the working class with stability, even if spending sprees come seldom.",
+      "Moderate. You can display yourself as a member in good standing of the middle class, with the occasional gift and indulgence seemly for a person of even higher station. You can maintain a servant or hire specific help as necessary. A fraction of your resources are available in cash, readily portable property (like jewelry or furniture), and other valuables (such as a car or modest home) that let you maintain a standard of living at the one-dot level wherever you happen to be, for up to six months.",
+      "Comfortable. You are a prominent and established member of your community, with land and an owned dwelling, and you have a reputation that lets you draw on credit at very generous terms. You likely have more tied up in equity and property than you do in ready cash. You can maintain a one dot quality of existence wherever you are without difficulty, for as long as you choose.",
+      "Wealthy. You rarely touch cash, as most of your assets exist in tangible forms that are themselves more valuable and stable than paper money. You hold more wealth than many of your local peers (if they can be called such a thing). When earning your Resources doesn’t enjoy your usual degree of attention, you can maintain a three-dot existence for up to a year, and a two-dot existence indefinitely.",
+      "Extremely Wealthy. You are the model to which others strive to achieve, at least in the popular mind. Television shows, magazine spreads, and gossip websites speculate about your clothing, the appointments of your numerous homes, and the luxury of your modes of transportation. You have vast and widely distributed assets, perhaps tied to the fates of nations, each with huge staffs and connections to every level of society through a region. You travel with a minimum of three-dot comforts, more with a little effort. Corporations and governments sometimes come to you to buy into stocks or bond programs.",
+    ],
+    pt: [
+      "Suficiente. Você consegue manter uma residência típica de classe trabalhadora com estabilidade, mesmo que gastos extras sejam raros.",
+      "Moderado. Você pode se apresentar como alguém em boa posição na classe média, com presentes e indulgências ocasionais condizentes com alguém de posição ainda mais alta. Você pode manter um empregado ou contratar ajuda específica quando necessário. Parte dos seus recursos está disponível em dinheiro, bens portáteis (como joias ou móveis) e outros valores (como um carro ou casa modesta), permitindo manter um padrão de vida de 1 ponto em qualquer lugar por até seis meses.",
+      "Confortável. Você é um membro proeminente e estabelecido da comunidade, com terras e residência própria, além de reputação que permite crédito em termos generosos. Provavelmente tem mais em patrimônio e propriedades do que em dinheiro imediato. Você consegue manter um padrão de vida de 1 ponto onde estiver, pelo tempo que desejar.",
+      "Rico. Você raramente usa dinheiro vivo, já que a maior parte dos seus bens existe em formas tangíveis mais valiosas e estáveis que papel-moeda. Você possui mais riqueza que muitos de seus pares locais. Quando sua fonte de Recursos não recebe a atenção habitual, você mantém um padrão de vida de 3 pontos por até um ano e de 2 pontos indefinidamente.",
+      "Extremamente Rico. Você é o modelo que outros almejam alcançar, ao menos no imaginário popular. Programas de TV, revistas e sites de fofoca especulam sobre suas roupas, suas casas e o luxo dos seus meios de transporte. Você tem ativos vastos e distribuídos, talvez ligados ao destino de nações, com grandes equipes e conexões em todos os níveis sociais de uma região. Você viaja com confortos de no mínimo 3 pontos, e mais com pouco esforço. Corporações e governos às vezes recorrem a você para investimentos em ações ou títulos.",
+    ],
+  },
+} as const
+
 function FlatSectionEditor({
   title,
   section,
@@ -272,6 +291,7 @@ export default function CharacterDetailPage() {
   const [locale, setLocale] = useState<Locale>("pt")
   const [isSectionsModalOpen, setIsSectionsModalOpen] = useState(false)
   const [isDeleteMode, setIsDeleteMode] = useState(false)
+  const [selectedBackgroundWiki, setSelectedBackgroundWiki] = useState<string | null>(null)
   const [backgroundDraft, setBackgroundDraft] = useState<(typeof commonBackgrounds)[number]>(commonBackgrounds[0])
   const [customBackgroundDraft, setCustomBackgroundDraft] = useState("")
   const [abilityDrafts, setAbilityDrafts] = useState<Record<(typeof abilityCategories)[number], string>>({
@@ -322,6 +342,10 @@ export default function CharacterDetailPage() {
     ...optionalSections,
   ]
   const requiredSectionKeys = new Set<SectionKey>(["attributes", "abilities", "backgrounds", "merits", "flaws", "tags"])
+  const selectedBackgroundWikiEntries = selectedBackgroundWiki
+    ? backgroundsWiki[selectedBackgroundWiki as keyof typeof backgroundsWiki]?.[locale]
+    : null
+  const selectedBackgroundCurrentValue = selectedBackgroundWiki ? state.backgrounds[selectedBackgroundWiki]?.value ?? 0 : 0
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 md:px-8">
@@ -524,7 +548,20 @@ export default function CharacterDetailPage() {
                 <div className="grid gap-3 md:grid-cols-3">
                   {Object.entries(state.backgrounds).map(([key, stat]) => (
                     <div key={key} className="flex items-center justify-between gap-2 text-sm">
-                      <Label>{getLocalizedStatName(locale, key)}</Label>
+                      <div className="flex items-center gap-1">
+                        <Label>{getLocalizedStatName(locale, key)}</Label>
+                        {backgroundsWiki[key as keyof typeof backgroundsWiki] && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => setSelectedBackgroundWiki(key)}
+                            aria-label={`${locale === "pt" ? "Abrir wiki de" : "Open wiki for"} ${getLocalizedStatName(locale, key)}`}
+                          >
+                            ?
+                          </Button>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
                         {isDeleteMode && (
@@ -644,6 +681,33 @@ export default function CharacterDetailPage() {
                   >
                     {locale === "pt" ? section.labelPt : section.labelEn}
                   </Button>
+                )
+              })}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {selectedBackgroundWiki && selectedBackgroundWikiEntries && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <Card className="w-full max-w-3xl">
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle>{getLocalizedStatName(locale, selectedBackgroundWiki)} Wiki</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setSelectedBackgroundWiki(null)}>×</Button>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {selectedBackgroundWikiEntries.map((entry, index) => {
+                const level = index + 1
+                const isCurrent = selectedBackgroundCurrentValue === level
+                return (
+                  <div key={level} className={`rounded-md border p-3 ${isCurrent ? "border-primary bg-primary/10" : "border-border"}`}>
+                    <p>
+                      <span className="font-semibold">[{level}]</span> {entry}
+                    </p>
+                    {isCurrent && (
+                      <p className="mt-1 text-xs font-semibold text-primary">{locale === "pt" ? "Nível atual" : "Current level"}</p>
+                    )}
+                  </div>
                 )
               })}
             </CardContent>
