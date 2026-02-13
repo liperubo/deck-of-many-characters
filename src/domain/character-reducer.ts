@@ -48,7 +48,7 @@ export function characterReducer(state: CharacterState, action: Action): Charact
         ...state,
         [action.section]: {
           ...(state[action.section] as Stats),
-          [action.key]: { value: 0, observation: null },
+          [action.key]: action.stat ?? { value: 0, observation: null },
         },
       }
     }

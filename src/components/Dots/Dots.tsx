@@ -6,10 +6,11 @@ import { toggleDot } from "@/domain/dots";
 type Props = {
   value: number;
   maxDots?: number;
+  minDots?: number;
   onChange?: (value: number) => void;
 };
 
-const Dots = ({ value, maxDots = 5, onChange }: Props) => {
+const Dots = ({ value, maxDots = 5, minDots = 0, onChange }: Props) => {
   const handleClick = (index: number) => {
     const next = toggleDot(value, index + 1, maxDots);
     onChange?.(next);
@@ -23,7 +24,7 @@ const Dots = ({ value, maxDots = 5, onChange }: Props) => {
         return (
           <span
             key={i}
-            onClick={() => onChange?.(i + 1 === value ? 0 : i + 1)}
+            onClick={() => onChange?.(i + 1 === value ? minDots : i + 1)}
             className={[
               "h-3.5 w-3.5 rounded-full border transition-colors",
               filled
