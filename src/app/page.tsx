@@ -2,10 +2,11 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { Plus, Upload, Download } from "lucide-react"
+import { Plus, Upload, Download, Search } from "lucide-react"
 import ThemeSwitch from "@/components/ThemeSwitch"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { CharacterSheet, createCharacterSheet } from "@/domain/character-sheet"
 import {
   exportCharacterSheets,
@@ -16,6 +17,7 @@ import {
 
 export default function Home() {
   const [sheets, setSheets] = useState<CharacterSheet[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -45,6 +47,15 @@ export default function Home() {
       setError(message)
     }
   }
+
+  const normalizedSearch = searchTerm.trim().toLowerCase()
+  const filteredSheets = normalizedSearch
+    ? sheets.filter((sheet) => {
+        const nameMatch = sheet.data.name.toLowerCase().includes(normalizedSearch)
+        const tagMatch = sheet.data.tags.some((tag) => tag.toLowerCase().includes(normalizedSearch))
+        return nameMatch || tagMatch
+      })
+    : sheets
 
   return (
     <main className="min-h-screen bg-background px-6 py-10 text-foreground md:px-12">
@@ -81,8 +92,18 @@ export default function Home() {
 
         {error && <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
 
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Pesquisar por nome ou tag"
+            className="pl-10"
+          />
+        </div>
+
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {sheets.map((sheet) => (
+          {filteredSheets.map((sheet) => (
             <Link key={sheet.id} href={`/character/${sheet.id}`}>
               <Card className="h-full transition hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-lg">
                 <CardHeader>
@@ -96,6 +117,10 @@ export default function Home() {
               </Card>
             </Link>
           ))}
+
+          {filteredSheets.length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhuma ficha encontrada para a busca.</p>
+          )}
         </section>
       </section>
     </main>

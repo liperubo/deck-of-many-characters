@@ -3,6 +3,8 @@ import { Action } from "./action"
 import { CharacterState } from "./character-state"
 import { Stats } from "./stat"
 
+const requiredSections = ["attributes", "abilities", "backgrounds", "merits", "flaws", "tags"] as const
+
 export function characterReducer(state: CharacterState, action: Action): CharacterState {
   switch (action.type) {
     case "SET_FIELD":
@@ -54,7 +56,33 @@ export function characterReducer(state: CharacterState, action: Action): Charact
     case "SET_TAGS":
       return { ...state, tags: action.tags }
 
+    case "DELETE_STAT": {
+      if (action.category) {
+        const currentCategory = (state[action.section] as Record<string, any>)[action.category] as Record<string, any>
+        const { [action.key]: _removed, ...remaining } = currentCategory
+
+        return {
+          ...state,
+          [action.section]: {
+            ...state[action.section],
+            [action.category]: remaining,
+          },
+        }
+      }
+
+      const currentSection = state[action.section] as Stats
+      const { [action.key]: _removed, ...remaining } = currentSection
+      return {
+        ...state,
+        [action.section]: remaining,
+      }
+    }
+
     case "TOGGLE_SECTION":
+      if (requiredSections.includes(action.section as (typeof requiredSections)[number])) {
+        return state
+      }
+
       return {
         ...state,
         activeSections: state.activeSections.includes(action.section)
