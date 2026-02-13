@@ -51,12 +51,15 @@ export function characterReducer(state: CharacterState, action: Action): Charact
       }
     }
 
+    case "SET_TAGS":
+      return { ...state, tags: action.tags }
+
     case "TOGGLE_SECTION":
       return {
         ...state,
         activeSections: state.activeSections.includes(action.section)
-          ? state.activeSections.filter(s => s !== action.section)
-          : [...state.activeSections, action.section]
+          ? state.activeSections.filter((s) => s !== action.section)
+          : [...state.activeSections, action.section],
       }
 
     case "INIT":

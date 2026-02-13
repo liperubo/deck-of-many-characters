@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { Plus, Upload, Download } from "lucide-react"
+import ThemeSwitch from "@/components/ThemeSwitch"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CharacterSheet, createCharacterSheet } from "@/domain/character-sheet"
@@ -54,7 +55,8 @@ export default function Home() {
             <p className="text-muted-foreground">Nova arquitetura de fichas com persistência local, importação e exportação em JSON.</p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <ThemeSwitch />
             <Button onClick={handleCreate} className="gap-2">
               <Plus className="h-4 w-4" />
               Nova ficha
