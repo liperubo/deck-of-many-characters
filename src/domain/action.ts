@@ -6,6 +6,12 @@ export type Action =
   | { type: "INIT"; payload: CharacterState }
   | { type: "ADD_STAT"; section: StatSectionKey; key: string }
   | {
+      type: "DELETE_STAT"
+      section: "abilities" | "backgrounds" | "merits" | "flaws"
+      category?: AbilityCategory | null
+      key: string
+    }
+  | {
       type: "SET_FIELD"
       field: "name" | "chronicle" | "concept" | "nature" | "demeanor" | "notes"
       value: string

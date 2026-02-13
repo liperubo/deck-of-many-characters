@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useReducer, useState } from "react"
 import { ArrowLeft, Eye, Plus, Trash2 } from "lucide-react"
 import { characterReducer } from "@/domain/character-reducer"
-import { cloneBaseCharacter, normalizeMageTraits, requiredMageTraits } from "@/domain/character-state"
+import { cloneBaseCharacter, normalizeActiveSections, normalizeMageTraits, requiredMageTraits } from "@/domain/character-state"
 import { abilityCategories, attributeCategories, FlatStatSection } from "@/domain/stat"
 import Dots from "@/components/Dots"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,8 @@ import ThemeSwitch from "@/components/ThemeSwitch"
 
 const sphereList = ["correspondence", "life", "prime", "entropy", "matter", "spirit", "forces", "mind", "time"] as const
 const commonBackgrounds = ["allies", "influence", "status", "contacts", "mentor", "fame", "resources"] as const
+const removableDefaultAbilities = new Set(["talents", "skills", "knowledges"])
+const removableDefaultBackgrounds = new Set(commonBackgrounds)
 
 const optionalSections: { key: SectionKey; labelPt: string; labelEn: string }[] = [
   { key: "spheres", labelPt: "Esferas", labelEn: "Spheres" },
@@ -161,6 +163,8 @@ const messages = {
     deleteSheet: "Deletar ficha",
     backgroundsCommon: "Antecedentes comuns",
     customBackground: "Antecedente personalizado",
+    deleteMode: "Modo de apagar campos",
+    deleting: "Apagando",
   },
   en: {
     back: "Back",
@@ -184,6 +188,8 @@ const messages = {
     deleteSheet: "Delete sheet",
     backgroundsCommon: "Common backgrounds",
     customBackground: "Custom background",
+    deleteMode: "Delete field mode",
+    deleting: "Deleting",
   },
 } as const
 
@@ -195,6 +201,8 @@ function FlatSectionEditor({
   data,
   onAdd,
   onUpdate,
+  onDelete,
+  deleteMode,
   addLabel,
   emptyLabel,
 }: {
@@ -203,6 +211,8 @@ function FlatSectionEditor({
   data: Record<string, { value: number }>
   onAdd: (section: FlatStatSection, key: string) => void
   onUpdate: (section: FlatStatSection, key: string, value: number) => void
+  onDelete: (section: FlatStatSection, key: string) => void
+  deleteMode: boolean
   addLabel: string
   emptyLabel: string
 }) {
@@ -237,7 +247,14 @@ function FlatSectionEditor({
           {Object.entries(data).map(([key, stat]) => (
             <div key={key} className="flex items-center justify-between gap-2">
               <span className="capitalize">{key.replace(/_/g, " ")}</span>
-              <Dots value={stat.value} onChange={(value) => onUpdate(section, key, value)} />
+              <div className="flex items-center gap-2">
+                <Dots value={stat.value} onChange={(value) => onUpdate(section, key, value)} />
+                {deleteMode && (
+                  <Button variant="ghost" size="icon" onClick={() => onDelete(section, key)} aria-label={`Delete ${key}`}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -255,6 +272,7 @@ export default function CharacterDetailPage() {
   const [tagDraft, setTagDraft] = useState("")
   const [locale, setLocale] = useState<Locale>("pt")
   const [isSectionsModalOpen, setIsSectionsModalOpen] = useState(false)
+  const [isDeleteMode, setIsDeleteMode] = useState(false)
   const [backgroundDraft, setBackgroundDraft] = useState<(typeof commonBackgrounds)[number]>(commonBackgrounds[0])
   const [customBackgroundDraft, setCustomBackgroundDraft] = useState("")
   const [abilityDrafts, setAbilityDrafts] = useState<Record<(typeof abilityCategories)[number], string>>({
@@ -266,6 +284,7 @@ export default function CharacterDetailPage() {
   const [state, dispatch] = useReducer(characterReducer, selected?.data ?? cloneBaseCharacter(), (initial) => ({
     ...initial,
     magetraits: normalizeMageTraits(initial.magetraits),
+    activeSections: normalizeActiveSections(initial.activeSections),
   }))
   const t = messages[locale]
   const availableBackgrounds = commonBackgrounds.filter((item) => !state.backgrounds[item])
@@ -300,6 +319,7 @@ export default function CharacterDetailPage() {
     { key: "abilities", labelPt: "Habilidades", labelEn: "Abilities" },
     ...optionalSections,
   ]
+  const requiredSectionKeys = new Set<SectionKey>(["attributes", "abilities", "backgrounds", "merits", "flaws", "tags"])
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 md:px-8">
@@ -331,6 +351,11 @@ export default function CharacterDetailPage() {
             </div>
 
             <ThemeSwitch />
+
+            <Button variant={isDeleteMode ? "destructive" : "outline"} className="w-full justify-start gap-2" onClick={() => setIsDeleteMode((prev) => !prev)}>
+              <Trash2 className="h-4 w-4" />
+              {t.deleteMode}: {isDeleteMode ? t.deleting : "Off"}
+            </Button>
 
             <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleDeleteSheet}>
               <Trash2 className="h-4 w-4" />
@@ -404,7 +429,19 @@ export default function CharacterDetailPage() {
                       {Object.entries(state.abilities[category]).map(([key, stat]) => (
                         <div key={key} className="flex items-center justify-between gap-2 text-sm">
                           <Label>{getLocalizedStatName(locale, key)}</Label>
-                          <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "abilities", category, key, value })} />
+                          <div className="flex items-center gap-2">
+                            <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "abilities", category, key, value })} />
+                            {isDeleteMode && !removableDefaultAbilities.has(key) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => dispatch({ type: "DELETE_STAT", section: "abilities", category, key })}
+                                aria-label={`Delete ${key}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </CardContent>
@@ -486,7 +523,19 @@ export default function CharacterDetailPage() {
                   {Object.entries(state.backgrounds).map(([key, stat]) => (
                     <div key={key} className="flex items-center justify-between gap-2 text-sm">
                       <Label>{getLocalizedStatName(locale, key)}</Label>
-                      <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
+                      <div className="flex items-center gap-2">
+                        <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
+                        {isDeleteMode && !removableDefaultBackgrounds.has(key as (typeof commonBackgrounds)[number]) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
+                            aria-label={`Delete ${key}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -508,10 +557,30 @@ export default function CharacterDetailPage() {
             </Card>
           )}
           {state.activeSections.includes("merits") && (
-            <FlatSectionEditor title={locale === "pt" ? "Qualidades" : "Merits"} section="merits" data={state.merits} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
+            <FlatSectionEditor
+              title={locale === "pt" ? "Qualidades" : "Merits"}
+              section="merits"
+              data={state.merits}
+              onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })}
+              onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
+              onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: section as "merits" | "flaws", key })}
+              deleteMode={isDeleteMode}
+              addLabel={t.add}
+              emptyLabel={t.noItems}
+            />
           )}
           {state.activeSections.includes("flaws") && (
-            <FlatSectionEditor title={locale === "pt" ? "Defeitos" : "Flaws"} section="flaws" data={state.flaws} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
+            <FlatSectionEditor
+              title={locale === "pt" ? "Defeitos" : "Flaws"}
+              section="flaws"
+              data={state.flaws}
+              onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })}
+              onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
+              onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: section as "merits" | "flaws", key })}
+              deleteMode={isDeleteMode}
+              addLabel={t.add}
+              emptyLabel={t.noItems}
+            />
           )}
 
           {state.activeSections.includes("tags") && (
@@ -562,11 +631,13 @@ export default function CharacterDetailPage() {
             <CardContent className="flex flex-wrap gap-2">
               {sectionLabels.map((section) => {
                 const active = state.activeSections.includes(section.key as SectionKey)
+                const required = requiredSectionKeys.has(section.key as SectionKey)
                 return (
                   <Button
                     key={section.key}
                     size="sm"
                     variant={active ? "default" : "outline"}
+                    disabled={required}
                     onClick={() => dispatch({ type: "TOGGLE_SECTION", section: section.key as SectionKey })}
                   >
                     {locale === "pt" ? section.labelPt : section.labelEn}

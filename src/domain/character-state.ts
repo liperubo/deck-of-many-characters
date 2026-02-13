@@ -2,6 +2,7 @@ import { Stats } from "./stat"
 import { ActiveSections } from "./section"
 
 export const requiredMageTraits = ["arete", "willpower", "quintessence", "paradox"] as const
+export const defaultVisibleSections = ["attributes", "abilities", "backgrounds", "merits", "flaws", "tags"] as const
 
 function buildRequiredMageTraits(): Stats {
   return Object.fromEntries(requiredMageTraits.map((trait) => [trait, { value: 0, observation: null }]))
@@ -104,7 +105,7 @@ export const baseCharacter: CharacterState = {
   merits: {},
   flaws: {},
   tags: [],
-  activeSections: ["attributes", "abilities"],
+  activeSections: [...defaultVisibleSections],
 }
 
 export function cloneBaseCharacter(): CharacterState {
@@ -124,4 +125,9 @@ export function normalizeMageTraits(magetraits: Stats): Stats {
   }
 
   return normalized
+}
+
+export function normalizeActiveSections(activeSections: ActiveSections): ActiveSections {
+  const merged = [...new Set([...defaultVisibleSections, ...activeSections])]
+  return merged as ActiveSections
 }
