@@ -25,10 +25,114 @@ const optionalSections: { key: SectionKey; labelPt: string; labelEn: string }[] 
   { key: "spheres", labelPt: "Esferas", labelEn: "Spheres" },
   { key: "magetraits", labelPt: "Traços de Mago", labelEn: "Mage Traits" },
   { key: "backgrounds", labelPt: "Antecedentes", labelEn: "Backgrounds" },
-  { key: "merits", labelPt: "Méritos", labelEn: "Merits" },
-  { key: "flaws", labelPt: "Falhas", labelEn: "Flaws" },
+  { key: "merits", labelPt: "Qualidades", labelEn: "Merits" },
+  { key: "flaws", labelPt: "Defeitos", labelEn: "Flaws" },
   { key: "tags", labelPt: "Tags", labelEn: "Tags" },
 ]
+
+const attributeCategoryLabels = {
+  physical: { pt: "Físico", en: "Physical" },
+  social: { pt: "Social", en: "Social" },
+  mental: { pt: "Mental", en: "Mental" },
+} as const
+
+const abilityCategoryLabels = {
+  talents: { pt: "Talentos", en: "Talents" },
+  skills: { pt: "Perícias", en: "Skills" },
+  knowledges: { pt: "Conhecimentos", en: "Knowledges" },
+} as const
+
+
+const sphereLabels = {
+  correspondence: { pt: "Correspondência", en: "Correspondence" },
+  life: { pt: "Vida", en: "Life" },
+  prime: { pt: "Primórdio", en: "Prime" },
+  entropy: { pt: "Entropia", en: "Entropy" },
+  matter: { pt: "Matéria", en: "Matter" },
+  spirit: { pt: "Espírito", en: "Spirit" },
+  forces: { pt: "Forças", en: "Forces" },
+  mind: { pt: "Mente", en: "Mind" },
+  time: { pt: "Tempo", en: "Time" },
+} as const
+
+const backgroundLabels = {
+  allies: { pt: "Aliados", en: "Allies" },
+  influence: { pt: "Influência", en: "Influence" },
+  status: { pt: "Status", en: "Status" },
+  contacts: { pt: "Contatos", en: "Contacts" },
+  mentor: { pt: "Mentor", en: "Mentor" },
+  fame: { pt: "Fama", en: "Fame" },
+  resources: { pt: "Recursos", en: "Resources" },
+} as const
+
+const statLabels = {
+  strength: { pt: "Força", en: "Strength" },
+  dexterity: { pt: "Destreza", en: "Dexterity" },
+  stamina: { pt: "Vigor", en: "Stamina" },
+  charisma: { pt: "Carisma", en: "Charisma" },
+  manipulation: { pt: "Manipulação", en: "Manipulation" },
+  appearance: { pt: "Aparência", en: "Appearance" },
+  perception: { pt: "Percepção", en: "Perception" },
+  intelligence: { pt: "Inteligência", en: "Intelligence" },
+  wits: { pt: "Raciocínio", en: "Wits" },
+  alertness: { pt: "Prontidão", en: "Alertness" },
+  art: { pt: "Arte", en: "Art" },
+  athletics: { pt: "Atletismo", en: "Athletics" },
+  awareness: { pt: "Prontidão", en: "Awareness" },
+  brawl: { pt: "Briga", en: "Brawl" },
+  empathy: { pt: "Empatia", en: "Empathy" },
+  expression: { pt: "Expressão", en: "Expression" },
+  intimidation: { pt: "Intimidação", en: "Intimidation" },
+  leadership: { pt: "Liderança", en: "Leadership" },
+  streetwise: { pt: "Manha", en: "Streetwise" },
+  subterfuge: { pt: "Lábia", en: "Subterfuge" },
+  crafts: { pt: "Ofícios", en: "Crafts" },
+  drive: { pt: "Condução", en: "Drive" },
+  etiquette: { pt: "Etiqueta", en: "Etiquette" },
+  firearms: { pt: "Armas de Fogo", en: "Firearms" },
+  martial_arts: { pt: "Artes Marciais", en: "Martial Arts" },
+  meditation: { pt: "Meditação", en: "Meditation" },
+  melee: { pt: "Armas Brancas", en: "Melee" },
+  research: { pt: "Pesquisa", en: "Research" },
+  stealth: { pt: "Furtividade", en: "Stealth" },
+  survival: { pt: "Sobrevivência", en: "Survival" },
+  technology: { pt: "Tecnologia", en: "Technology" },
+  academics: { pt: "Acadêmicos", en: "Academics" },
+  computer: { pt: "Computador", en: "Computer" },
+  cosmology: { pt: "Cosmologia", en: "Cosmology" },
+  enigmas: { pt: "Enigmas", en: "Enigmas" },
+  esoterica: { pt: "Esoterismo", en: "Esoterica" },
+  investigation: { pt: "Investigação", en: "Investigation" },
+  law: { pt: "Direito", en: "Law" },
+  medicine: { pt: "Medicina", en: "Medicine" },
+  occult: { pt: "Ocultismo", en: "Occult" },
+  politics: { pt: "Política", en: "Politics" },
+  science: { pt: "Ciência", en: "Science" },
+  correspondence: { pt: "Correspondência", en: "Correspondence" },
+  life: { pt: "Vida", en: "Life" },
+  prime: { pt: "Primórdio", en: "Prime" },
+  entropy: { pt: "Entropia", en: "Entropy" },
+  matter: { pt: "Matéria", en: "Matter" },
+  spirit: { pt: "Espírito", en: "Spirit" },
+  forces: { pt: "Forças", en: "Forces" },
+  mind: { pt: "Mente", en: "Mind" },
+  time: { pt: "Tempo", en: "Time" },
+  allies: { pt: "Aliados", en: "Allies" },
+  influence: { pt: "Influência", en: "Influence" },
+  status: { pt: "Status", en: "Status" },
+  contacts: { pt: "Contatos", en: "Contacts" },
+  mentor: { pt: "Mentor", en: "Mentor" },
+  fame: { pt: "Fama", en: "Fame" },
+  resources: { pt: "Recursos", en: "Resources" },
+} as const
+
+function getLocalizedStatName(locale: Locale, key: string) {
+  const localized = statLabels[key as keyof typeof statLabels]
+  if (localized) return localized[locale]
+  return key
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
 
 const messages = {
   pt: {
@@ -238,11 +342,11 @@ export default function CharacterDetailPage() {
               <CardContent className="grid gap-4 md:grid-cols-3">
                 {attributeCategories.map((category) => (
                   <Card key={category} className="bg-secondary/40">
-                    <CardHeader><CardTitle className="text-base capitalize">{category}</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-base">{attributeCategoryLabels[category][locale]}</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
                       {Object.entries(state.attributes[category]).map(([key, stat]) => (
                         <div key={key} className="flex items-center justify-between gap-2 text-sm">
-                          <Label className="capitalize">{key.replace(/_/g, " ")}</Label>
+                          <Label>{getLocalizedStatName(locale, key)}</Label>
                           <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "attributes", category, key, value })} />
                         </div>
                       ))}
@@ -259,13 +363,13 @@ export default function CharacterDetailPage() {
               <CardContent className="grid gap-4 md:grid-cols-3">
                 {abilityCategories.map((category) => (
                   <Card key={category} className="bg-secondary/40">
-                    <CardHeader><CardTitle className="text-base capitalize">{category}</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-base">{abilityCategoryLabels[category][locale]}</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex gap-2">
                         <Input
                           value={abilityDrafts[category]}
                           onChange={(event) => setAbilityDrafts((prev) => ({ ...prev, [category]: event.target.value }))}
-                          placeholder={`${t.add} ${category}`}
+                          placeholder={`${t.add} ${abilityCategoryLabels[category][locale]}`}
                         />
                         <Button
                           size="sm"
@@ -282,7 +386,7 @@ export default function CharacterDetailPage() {
 
                       {Object.entries(state.abilities[category]).map(([key, stat]) => (
                         <div key={key} className="flex items-center justify-between gap-2 text-sm">
-                          <Label className="capitalize">{key.replace(/_/g, " ")}</Label>
+                          <Label>{getLocalizedStatName(locale, key)}</Label>
                           <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "abilities", category, key, value })} />
                         </div>
                       ))}
@@ -299,7 +403,7 @@ export default function CharacterDetailPage() {
               <CardContent className="space-y-3">
                 {sphereList.map((sphere) => (
                   <div key={sphere} className="flex items-center justify-between gap-2 text-sm">
-                    <Label className="capitalize">{sphere.replace(/_/g, " ")}</Label>
+                    <Label className="capitalize">{sphereLabels[sphere][locale]}</Label>
                     <Dots
                       value={state.spheres[sphere]?.value ?? 0}
                       onChange={(value) => dispatch({ type: "SET_STAT", section: "spheres", key: sphere, value })}
@@ -321,7 +425,7 @@ export default function CharacterDetailPage() {
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
                     {commonBackgrounds.map((item) => (
-                      <option key={item} value={item}>{item}</option>
+                      <option key={item} value={item}>{backgroundLabels[item][locale]}</option>
                     ))}
                   </select>
                   <Button
@@ -334,12 +438,12 @@ export default function CharacterDetailPage() {
                   </Button>
                 </div>
 
-                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: Allies, Influence, Status, Contacts, Mentor, Fame, Resources.</p>
+                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: {commonBackgrounds.map((item) => backgroundLabels[item][locale]).join(", ")}.</p>
 
                 <div className="space-y-3">
                   {Object.entries(state.backgrounds).map(([key, stat]) => (
                     <div key={key} className="flex items-center justify-between gap-2 text-sm">
-                      <Label className="capitalize">{key.replace(/_/g, " ")}</Label>
+                      <Label className="capitalize">{getLocalizedStatName(locale, key)}</Label>
                       <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
                     </div>
                   ))}
@@ -352,10 +456,10 @@ export default function CharacterDetailPage() {
             <FlatSectionEditor title={locale === "pt" ? "Traços de Mago" : "Mage Traits"} section="magetraits" data={state.magetraits} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
           )}
           {state.activeSections.includes("merits") && (
-            <FlatSectionEditor title={locale === "pt" ? "Méritos" : "Merits"} section="merits" data={state.merits} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
+            <FlatSectionEditor title={locale === "pt" ? "Qualidades" : "Merits"} section="merits" data={state.merits} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
           )}
           {state.activeSections.includes("flaws") && (
-            <FlatSectionEditor title={locale === "pt" ? "Falhas" : "Flaws"} section="flaws" data={state.flaws} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
+            <FlatSectionEditor title={locale === "pt" ? "Defeitos" : "Flaws"} section="flaws" data={state.flaws} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
           )}
 
           {state.activeSections.includes("tags") && (
