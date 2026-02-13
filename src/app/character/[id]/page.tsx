@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useReducer, useState } from "react"
-import { ArrowLeft, Eye, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, Eye, Plus, Trash2, XCircle } from "lucide-react"
 import { characterReducer } from "@/domain/character-reducer"
 import { cloneBaseCharacter, normalizeActiveSections, normalizeMageTraits, requiredMageTraits } from "@/domain/character-state"
 import { abilityCategories, attributeCategories, FlatStatSection } from "@/domain/stat"
@@ -21,7 +21,6 @@ import ThemeSwitch from "@/components/ThemeSwitch"
 const sphereList = ["correspondence", "life", "prime", "entropy", "matter", "spirit", "forces", "mind", "time"] as const
 const commonBackgrounds = ["allies", "influence", "status", "contacts", "mentor", "fame", "resources"] as const
 const removableDefaultAbilities = new Set(["talents", "skills", "knowledges"])
-const removableDefaultBackgrounds = new Set(commonBackgrounds)
 
 const optionalSections: { key: SectionKey; labelPt: string; labelEn: string }[] = [
   { key: "spheres", labelPt: "Esferas", labelEn: "Spheres" },
@@ -163,7 +162,7 @@ const messages = {
     deleteSheet: "Deletar ficha",
     backgroundsCommon: "Antecedentes comuns",
     customBackground: "Antecedente personalizado",
-    deleteMode: "Modo de apagar campos",
+    deleteMode: "Modo Remoção",
     deleting: "Apagando",
   },
   en: {
@@ -188,7 +187,7 @@ const messages = {
     deleteSheet: "Delete sheet",
     backgroundsCommon: "Common backgrounds",
     customBackground: "Custom background",
-    deleteMode: "Delete field mode",
+    deleteMode: "Delete Mode",
     deleting: "Deleting",
   },
 } as const
@@ -309,6 +308,9 @@ export default function CharacterDetailPage() {
   }, [characterId, state])
 
   const handleDeleteSheet = () => {
+    const confirmed = window.confirm(locale === "pt" ? "Tem certeza que deseja deletar esta ficha?" : "Are you sure you want to delete this sheet?")
+    if (!confirmed) return
+
     const remainingSheets = loadCharacterSheets().filter((sheet) => sheet.id !== characterId)
     saveCharacterSheets(remainingSheets)
     router.push("/")
@@ -358,7 +360,7 @@ export default function CharacterDetailPage() {
             </Button>
 
             <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleDeleteSheet}>
-              <Trash2 className="h-4 w-4" />
+              <XCircle className="h-4 w-4" />
               {t.deleteSheet}
             </Button>
           </div>
@@ -431,16 +433,16 @@ export default function CharacterDetailPage() {
                           <Label>{getLocalizedStatName(locale, key)}</Label>
                           <div className="flex items-center gap-2">
                             <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "abilities", category, key, value })} />
-                            {isDeleteMode && !removableDefaultAbilities.has(key) && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => dispatch({ type: "DELETE_STAT", section: "abilities", category, key })}
-                                aria-label={`Delete ${key}`}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={!isDeleteMode || removableDefaultAbilities.has(key) ? "invisible" : ""}
+                              disabled={!isDeleteMode || removableDefaultAbilities.has(key)}
+                              onClick={() => dispatch({ type: "DELETE_STAT", section: "abilities", category, key })}
+                              aria-label={`Delete ${key}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -525,7 +527,7 @@ export default function CharacterDetailPage() {
                       <Label>{getLocalizedStatName(locale, key)}</Label>
                       <div className="flex items-center gap-2">
                         <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
-                        {isDeleteMode && !removableDefaultBackgrounds.has(key as (typeof commonBackgrounds)[number]) && (
+                        {isDeleteMode && (
                           <Button
                             variant="ghost"
                             size="icon"
