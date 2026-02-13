@@ -42,6 +42,29 @@ const abilityCategoryLabels = {
   knowledges: { pt: "Conhecimentos", en: "Knowledges" },
 } as const
 
+
+const sphereLabels = {
+  correspondence: { pt: "Correspondência", en: "Correspondence" },
+  life: { pt: "Vida", en: "Life" },
+  prime: { pt: "Primórdio", en: "Prime" },
+  entropy: { pt: "Entropia", en: "Entropy" },
+  matter: { pt: "Matéria", en: "Matter" },
+  spirit: { pt: "Espírito", en: "Spirit" },
+  forces: { pt: "Forças", en: "Forces" },
+  mind: { pt: "Mente", en: "Mind" },
+  time: { pt: "Tempo", en: "Time" },
+} as const
+
+const backgroundLabels = {
+  allies: { pt: "Aliados", en: "Allies" },
+  influence: { pt: "Influência", en: "Influence" },
+  status: { pt: "Status", en: "Status" },
+  contacts: { pt: "Contatos", en: "Contacts" },
+  mentor: { pt: "Mentor", en: "Mentor" },
+  fame: { pt: "Fama", en: "Fame" },
+  resources: { pt: "Recursos", en: "Resources" },
+} as const
+
 const statLabels = {
   strength: { pt: "Força", en: "Strength" },
   dexterity: { pt: "Destreza", en: "Dexterity" },
@@ -55,7 +78,7 @@ const statLabels = {
   alertness: { pt: "Prontidão", en: "Alertness" },
   art: { pt: "Arte", en: "Art" },
   athletics: { pt: "Atletismo", en: "Athletics" },
-  awareness: { pt: "Consciência", en: "Awareness" },
+  awareness: { pt: "Prontidão", en: "Awareness" },
   brawl: { pt: "Briga", en: "Brawl" },
   empathy: { pt: "Empatia", en: "Empathy" },
   expression: { pt: "Expressão", en: "Expression" },
@@ -85,6 +108,22 @@ const statLabels = {
   occult: { pt: "Ocultismo", en: "Occult" },
   politics: { pt: "Política", en: "Politics" },
   science: { pt: "Ciência", en: "Science" },
+  correspondence: { pt: "Correspondência", en: "Correspondence" },
+  life: { pt: "Vida", en: "Life" },
+  prime: { pt: "Primórdio", en: "Prime" },
+  entropy: { pt: "Entropia", en: "Entropy" },
+  matter: { pt: "Matéria", en: "Matter" },
+  spirit: { pt: "Espírito", en: "Spirit" },
+  forces: { pt: "Forças", en: "Forces" },
+  mind: { pt: "Mente", en: "Mind" },
+  time: { pt: "Tempo", en: "Time" },
+  allies: { pt: "Aliados", en: "Allies" },
+  influence: { pt: "Influência", en: "Influence" },
+  status: { pt: "Status", en: "Status" },
+  contacts: { pt: "Contatos", en: "Contacts" },
+  mentor: { pt: "Mentor", en: "Mentor" },
+  fame: { pt: "Fama", en: "Fame" },
+  resources: { pt: "Recursos", en: "Resources" },
 } as const
 
 function getLocalizedStatName(locale: Locale, key: string) {
@@ -364,7 +403,7 @@ export default function CharacterDetailPage() {
               <CardContent className="space-y-3">
                 {sphereList.map((sphere) => (
                   <div key={sphere} className="flex items-center justify-between gap-2 text-sm">
-                    <Label className="capitalize">{sphere.replace(/_/g, " ")}</Label>
+                    <Label className="capitalize">{sphereLabels[sphere][locale]}</Label>
                     <Dots
                       value={state.spheres[sphere]?.value ?? 0}
                       onChange={(value) => dispatch({ type: "SET_STAT", section: "spheres", key: sphere, value })}
@@ -386,7 +425,7 @@ export default function CharacterDetailPage() {
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
                     {commonBackgrounds.map((item) => (
-                      <option key={item} value={item}>{item}</option>
+                      <option key={item} value={item}>{backgroundLabels[item][locale]}</option>
                     ))}
                   </select>
                   <Button
@@ -399,12 +438,12 @@ export default function CharacterDetailPage() {
                   </Button>
                 </div>
 
-                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: Allies, Influence, Status, Contacts, Mentor, Fame, Resources.</p>
+                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: {commonBackgrounds.map((item) => backgroundLabels[item][locale]).join(", ")}.</p>
 
                 <div className="space-y-3">
                   {Object.entries(state.backgrounds).map(([key, stat]) => (
                     <div key={key} className="flex items-center justify-between gap-2 text-sm">
-                      <Label className="capitalize">{key.replace(/_/g, " ")}</Label>
+                      <Label className="capitalize">{getLocalizedStatName(locale, key)}</Label>
                       <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
                     </div>
                   ))}
