@@ -1,10 +1,10 @@
 import { CharacterState } from "./character-state"
 import { SectionKey, StatSectionKey } from "./section"
-import { AbilityCategory, AttributeCategory } from "./stat"
+import { AbilityCategory, AttributeCategory, Stat } from "./stat"
 
 export type Action =
   | { type: "INIT"; payload: CharacterState }
-  | { type: "ADD_STAT"; section: StatSectionKey; key: string }
+  | { type: "ADD_STAT"; section: StatSectionKey; key: string; stat?: Stat }
   | {
       type: "DELETE_STAT"
       section: "abilities" | "backgrounds" | "merits" | "flaws"
