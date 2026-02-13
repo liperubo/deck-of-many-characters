@@ -2,6 +2,10 @@
 export type Stat = {
   value: number
   observation?: string | null
+  minValue?: number
+  maxValue?: number
+  label?: string
+  description?: string
 }
 
 export type Stats = Record<string, Stat>

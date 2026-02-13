@@ -6,7 +6,7 @@ import { useEffect, useMemo, useReducer, useState } from "react"
 import { ArrowLeft, Eye, Plus, Trash2, XCircle } from "lucide-react"
 import { characterReducer } from "@/domain/character-reducer"
 import { cloneBaseCharacter, normalizeActiveSections, normalizeMageTraits, requiredMageTraits } from "@/domain/character-state"
-import { abilityCategories, attributeCategories, FlatStatSection } from "@/domain/stat"
+import { abilityCategories, attributeCategories, FlatStatSection, Stat } from "@/domain/stat"
 import Dots from "@/components/Dots"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,9 +17,9 @@ import { Badge } from "@/components/ui/badge"
 import { loadCharacterSheets, saveCharacterSheets } from "@/storage/characterStorage"
 import { SectionKey } from "@/domain/section"
 import ThemeSwitch from "@/components/ThemeSwitch"
+import { backgroundTemplates, flawTemplates, formatTraitTemplate, meritTemplates, TraitTemplate } from "@/domain/trait-catalog"
 
 const sphereList = ["correspondence", "life", "prime", "entropy", "matter", "spirit", "forces", "mind", "time"] as const
-const commonBackgrounds = ["allies", "influence", "status", "contacts", "mentor", "fame", "resources"] as const
 const removableDefaultAbilities = new Set(["talents", "skills", "knowledges"])
 
 const optionalSections: { key: SectionKey; labelPt: string; labelEn: string }[] = [
@@ -54,16 +54,6 @@ const sphereLabels = {
   forces: { pt: "Forças", en: "Forces" },
   mind: { pt: "Mente", en: "Mind" },
   time: { pt: "Tempo", en: "Time" },
-} as const
-
-const backgroundLabels = {
-  allies: { pt: "Aliados", en: "Allies" },
-  influence: { pt: "Influência", en: "Influence" },
-  status: { pt: "Status", en: "Status" },
-  contacts: { pt: "Contatos", en: "Contacts" },
-  mentor: { pt: "Mentor", en: "Mentor" },
-  fame: { pt: "Fama", en: "Fame" },
-  resources: { pt: "Recursos", en: "Resources" },
 } as const
 
 const statLabels = {
@@ -160,8 +150,6 @@ const messages = {
     openSections: "Seções",
     language: "Idioma",
     deleteSheet: "Deletar ficha",
-    backgroundsCommon: "Antecedentes comuns",
-    customBackground: "Antecedente personalizado",
     deleteMode: "Modo Remoção",
     deleting: "Apagando",
   },
@@ -185,8 +173,6 @@ const messages = {
     openSections: "Sections",
     language: "Language",
     deleteSheet: "Delete sheet",
-    backgroundsCommon: "Common backgrounds",
-    customBackground: "Custom background",
     deleteMode: "Delete Mode",
     deleting: "Deleting",
   },
@@ -194,68 +180,156 @@ const messages = {
 
 type Locale = keyof typeof messages
 
+function findExistingKey(data: Record<string, Stat>, name: string) {
+  const normalized = name.trim().toLowerCase()
+  if (!normalized) return null
+  return Object.keys(data).find((key) => key.toLowerCase() === normalized) ?? null
+}
+
+function TraitSearchAdd({
+  section,
+  templates,
+  data,
+  onAdd,
+  locale,
+}: {
+  section: "backgrounds" | "merits" | "flaws"
+  templates: TraitTemplate[]
+  data: Record<string, Stat>
+  onAdd: (section: "backgrounds" | "merits" | "flaws", key: string, stat: Stat) => void
+  locale: Locale
+}) {
+  const [query, setQuery] = useState("")
+  const normalizedQuery = query.trim().toLowerCase()
+
+  const suggestions = templates.filter((template) => {
+    if (!normalizedQuery) return true
+    return template.name.toLowerCase().includes(normalizedQuery)
+  })
+
+  const addTemplate = (template: TraitTemplate) => {
+    const existingKey = findExistingKey(data, template.name)
+    if (existingKey) return
+
+    onAdd(section, template.name, {
+      value: template.defaultValue,
+      minValue: template.min,
+      maxValue: template.max,
+      label: template.name,
+      description: template.description,
+      observation: null,
+    })
+    setQuery("")
+  }
+
+  const addCustom = () => {
+    const trimmed = query.trim()
+    if (!trimmed || findExistingKey(data, trimmed)) return
+
+    const minValue = section === "backgrounds" ? 1 : 0
+    onAdd(section, trimmed, {
+      value: minValue,
+      minValue,
+      maxValue: 5,
+      label: trimmed,
+      observation: null,
+    })
+    setQuery("")
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={locale === "pt" ? "Buscar ou criar" : "Search or create"}
+        />
+        <Button onClick={addCustom} disabled={!normalizedQuery}>
+          {locale === "pt" ? "Criar" : "Create"}
+        </Button>
+      </div>
+
+      {normalizedQuery && !suggestions.some((item) => item.name.toLowerCase() === normalizedQuery) && !findExistingKey(data, query) && (
+        <Button variant="outline" size="sm" onClick={addCustom} className="w-full justify-start">
+          {locale === "pt" ? `Adicionar "${query.trim()}" nesta ficha` : `Add "${query.trim()}" to this sheet`}
+        </Button>
+      )}
+
+      {suggestions.length > 0 && (
+        <div className="max-h-44 space-y-2 overflow-auto rounded-md border border-border p-2">
+          {suggestions.map((template) => {
+            const alreadyAdded = Boolean(findExistingKey(data, template.name))
+            return (
+              <Button
+                key={template.name}
+                variant="ghost"
+                size="sm"
+                className="h-auto w-full justify-start whitespace-normal text-left"
+                onClick={() => addTemplate(template)}
+                disabled={alreadyAdded}
+              >
+                {formatTraitTemplate(template)}
+              </Button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function FlatSectionEditor({
   title,
   section,
+  templates,
   data,
   onAdd,
   onUpdate,
   onDelete,
   deleteMode,
-  addLabel,
   emptyLabel,
+  locale,
 }: {
   title: string
-  section: Exclude<FlatStatSection, "backgrounds" | "spheres">
-  data: Record<string, { value: number }>
-  onAdd: (section: FlatStatSection, key: string) => void
+  section: "backgrounds" | "merits" | "flaws"
+  templates: TraitTemplate[]
+  data: Record<string, Stat>
+  onAdd: (section: "backgrounds" | "merits" | "flaws", key: string, stat: Stat) => void
   onUpdate: (section: FlatStatSection, key: string, value: number) => void
   onDelete: (section: FlatStatSection, key: string) => void
   deleteMode: boolean
-  addLabel: string
   emptyLabel: string
+  locale: Locale
 }) {
-  const [draft, setDraft] = useState("")
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`${addLabel} ${title}`} />
-          <Button
-            size="sm"
-            onClick={() => {
-              const normalized = draft.trim().toLowerCase().replace(/\s+/g, "_")
-              if (!normalized || data[normalized]) return
-              onAdd(section, normalized)
-              setDraft("")
-            }}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            {addLabel}
-          </Button>
-        </div>
+        <TraitSearchAdd section={section} templates={templates} data={data} onAdd={onAdd} locale={locale} />
 
         {Object.keys(data).length === 0 && <p className="text-sm text-muted-foreground">{emptyLabel}</p>}
 
         <div className="space-y-3">
-          {Object.entries(data).map(([key, stat]) => (
-            <div key={key} className="flex items-center justify-between gap-2">
-              <span className="capitalize">{key.replace(/_/g, " ")}</span>
-              <div className="flex items-center gap-2">
-                <Dots value={stat.value} onChange={(value) => onUpdate(section, key, value)} />
-                {deleteMode && (
-                  <Button variant="ghost" size="icon" onClick={() => onDelete(section, key)} aria-label={`Delete ${key}`}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                )}
+          {Object.entries(data).map(([key, stat]) => {
+            const minValue = stat.minValue ?? (section === "backgrounds" ? 1 : 0)
+            const maxValue = stat.maxValue ?? 5
+            return (
+              <div key={key} className="flex items-center justify-between gap-2">
+                <span className="text-sm">{stat.label ?? getLocalizedStatName(locale, key)}</span>
+                <div className="flex items-center gap-2">
+                  <Dots value={stat.value} minDots={minValue} maxDots={maxValue} onChange={(value) => onUpdate(section, key, value)} />
+                  {deleteMode && (
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(section, key)} aria-label={`Delete ${key}`}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </CardContent>
     </Card>
@@ -272,8 +346,6 @@ export default function CharacterDetailPage() {
   const [locale, setLocale] = useState<Locale>("pt")
   const [isSectionsModalOpen, setIsSectionsModalOpen] = useState(false)
   const [isDeleteMode, setIsDeleteMode] = useState(false)
-  const [backgroundDraft, setBackgroundDraft] = useState<(typeof commonBackgrounds)[number]>(commonBackgrounds[0])
-  const [customBackgroundDraft, setCustomBackgroundDraft] = useState("")
   const [abilityDrafts, setAbilityDrafts] = useState<Record<(typeof abilityCategories)[number], string>>({
     talents: "",
     skills: "",
@@ -286,14 +358,6 @@ export default function CharacterDetailPage() {
     activeSections: normalizeActiveSections(initial.activeSections),
   }))
   const t = messages[locale]
-  const availableBackgrounds = commonBackgrounds.filter((item) => !state.backgrounds[item])
-
-  useEffect(() => {
-    if (availableBackgrounds.length > 0 && !availableBackgrounds.includes(backgroundDraft)) {
-      setBackgroundDraft(availableBackgrounds[0])
-    }
-  }, [availableBackgrounds, backgroundDraft])
-
   useEffect(() => {
     const updated = loadCharacterSheets().map((sheet) =>
       sheet.id === characterId
@@ -471,78 +535,18 @@ export default function CharacterDetailPage() {
           )}
 
           {state.activeSections.includes("backgrounds") && (
-            <Card>
-              <CardHeader><CardTitle>{locale === "pt" ? "Antecedentes" : "Backgrounds"}</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <select
-                    value={backgroundDraft}
-                    onChange={(event) => setBackgroundDraft(event.target.value as (typeof commonBackgrounds)[number])}
-                    disabled={availableBackgrounds.length === 0}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  >
-                    {availableBackgrounds.length > 0 ? (
-                      availableBackgrounds.map((item) => (
-                        <option key={item} value={item}>{getLocalizedStatName(locale, item)}</option>
-                      ))
-                    ) : (
-                      <option value="">{t.noItems}</option>
-                    )}
-                  </select>
-                  <Button
-                    onClick={() => {
-                      if (!backgroundDraft) return
-                      if (state.backgrounds[backgroundDraft]) return
-                      dispatch({ type: "SET_STAT", section: "backgrounds", key: backgroundDraft, value: 0 })
-                    }}
-                    disabled={availableBackgrounds.length === 0}
-                  >
-                    {t.add}
-                  </Button>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    value={customBackgroundDraft}
-                    onChange={(event) => setCustomBackgroundDraft(event.target.value)}
-                    placeholder={t.customBackground}
-                  />
-                  <Button
-                    onClick={() => {
-                      const normalized = customBackgroundDraft.trim().toLowerCase().replace(/\s+/g, "_")
-                      if (!normalized || state.backgrounds[normalized]) return
-                      dispatch({ type: "SET_STAT", section: "backgrounds", key: normalized, value: 0 })
-                      setCustomBackgroundDraft("")
-                    }}
-                  >
-                    {t.add}
-                  </Button>
-                </div>
-
-                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: {commonBackgrounds.map((item) => backgroundLabels[item][locale]).join(", ")}.</p>
-
-                <div className="grid gap-3 md:grid-cols-3">
-                  {Object.entries(state.backgrounds).map(([key, stat]) => (
-                    <div key={key} className="flex items-center justify-between gap-2 text-sm">
-                      <Label>{getLocalizedStatName(locale, key)}</Label>
-                      <div className="flex items-center gap-2">
-                        <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
-                        {isDeleteMode && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
-                            aria-label={`Delete ${key}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <FlatSectionEditor
+              title={locale === "pt" ? "Antecedentes" : "Backgrounds"}
+              section="backgrounds"
+              templates={backgroundTemplates}
+              data={state.backgrounds}
+              onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
+              onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
+              onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
+              deleteMode={isDeleteMode}
+              emptyLabel={t.noItems}
+              locale={locale}
+            />
           )}
 
           {state.activeSections.includes("magetraits") && (
@@ -562,26 +566,28 @@ export default function CharacterDetailPage() {
             <FlatSectionEditor
               title={locale === "pt" ? "Qualidades" : "Merits"}
               section="merits"
+              templates={meritTemplates}
               data={state.merits}
-              onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })}
+              onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
               onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
               onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: section as "merits" | "flaws", key })}
               deleteMode={isDeleteMode}
-              addLabel={t.add}
               emptyLabel={t.noItems}
+              locale={locale}
             />
           )}
           {state.activeSections.includes("flaws") && (
             <FlatSectionEditor
               title={locale === "pt" ? "Defeitos" : "Flaws"}
               section="flaws"
+              templates={flawTemplates}
               data={state.flaws}
-              onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })}
+              onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
               onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
               onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: section as "merits" | "flaws", key })}
               deleteMode={isDeleteMode}
-              addLabel={t.add}
               emptyLabel={t.noItems}
+              locale={locale}
             />
           )}
 
