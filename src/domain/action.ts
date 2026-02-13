@@ -5,11 +5,7 @@ import { AbilityCategory, AttributeCategory } from "./stat"
 export type Action =
   | { type: "INIT"; payload: CharacterState }
   | { type: "ADD_STAT"; section: StatSectionKey; key: string }
-  | {
-      type: "SET_FIELD"
-      field: "name" | "chronicle" | "concept" | "nature" | "demeanor" | "notes"
-      value: string
-    }
+  | { type: "SET_FIELD"; field: "name" | "chronicle" | "concept" | "nature" | "demeanor" | "notes"; value: string }
   | {
       type: "SET_STAT"
       section: "attributes" | "abilities" | "spheres" | "magetraits" | "backgrounds" | "merits" | "flaws"

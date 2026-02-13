@@ -57,6 +57,7 @@ export default function Home() {
 
           <div className="flex flex-wrap items-center gap-3">
             <ThemeSwitch />
+          <div className="flex flex-wrap gap-3">
             <Button onClick={handleCreate} className="gap-2">
               <Plus className="h-4 w-4" />
               Nova ficha
