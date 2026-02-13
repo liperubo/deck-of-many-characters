@@ -1,6 +1,12 @@
 import { Stats } from "./stat"
 import { ActiveSections } from "./section"
 
+export const requiredMageTraits = ["arete", "willpower", "quintessence", "paradox"] as const
+
+function buildRequiredMageTraits(): Stats {
+  return Object.fromEntries(requiredMageTraits.map((trait) => [trait, { value: 0, observation: null }]))
+}
+
 export type CharacterState = {
   name: string
   chronicle: string
@@ -93,7 +99,7 @@ export const baseCharacter: CharacterState = {
     },
   },
   spheres: {},
-  magetraits: {},
+  magetraits: buildRequiredMageTraits(),
   backgrounds: {},
   merits: {},
   flaws: {},
@@ -103,4 +109,19 @@ export const baseCharacter: CharacterState = {
 
 export function cloneBaseCharacter(): CharacterState {
   return structuredClone(baseCharacter)
+}
+
+export function normalizeMageTraits(magetraits: Stats): Stats {
+  const normalized = buildRequiredMageTraits()
+
+  for (const trait of requiredMageTraits) {
+    if (magetraits[trait]) {
+      normalized[trait] = {
+        ...normalized[trait],
+        ...magetraits[trait],
+      }
+    }
+  }
+
+  return normalized
 }

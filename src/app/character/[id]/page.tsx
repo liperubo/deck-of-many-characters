@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useReducer, useState } from "react"
 import { ArrowLeft, Eye, Plus, Trash2 } from "lucide-react"
 import { characterReducer } from "@/domain/character-reducer"
-import { cloneBaseCharacter } from "@/domain/character-state"
+import { cloneBaseCharacter, normalizeMageTraits, requiredMageTraits } from "@/domain/character-state"
 import { abilityCategories, attributeCategories, FlatStatSection } from "@/domain/stat"
 import Dots from "@/components/Dots"
 import { Button } from "@/components/ui/button"
@@ -55,7 +55,27 @@ const statLabels = {
   alertness: { pt: "Prontidão", en: "Alertness" },
   art: { pt: "Arte", en: "Art" },
   athletics: { pt: "Atletismo", en: "Athletics" },
-  awareness: { pt: "Consciência", en: "Awareness" },
+  awareness: { pt: "Prontidão", en: "Awareness" },
+  correspondence: { pt: "Correspondência", en: "Correspondence" },
+  life: { pt: "Vida", en: "Life" },
+  prime: { pt: "Primórdio", en: "Prime" },
+  entropy: { pt: "Entropia", en: "Entropy" },
+  matter: { pt: "Matéria", en: "Matter" },
+  spirit: { pt: "Espírito", en: "Spirit" },
+  forces: { pt: "Forças", en: "Forces" },
+  mind: { pt: "Mente", en: "Mind" },
+  time: { pt: "Tempo", en: "Time" },
+  allies: { pt: "Aliados", en: "Allies" },
+  influence: { pt: "Influência", en: "Influence" },
+  status: { pt: "Status", en: "Status" },
+  contacts: { pt: "Contatos", en: "Contacts" },
+  mentor: { pt: "Mentor", en: "Mentor" },
+  fame: { pt: "Fama", en: "Fame" },
+  resources: { pt: "Recursos", en: "Resources" },
+  arete: { pt: "Arete", en: "Arete" },
+  willpower: { pt: "Força de Vontade", en: "Willpower" },
+  quintessence: { pt: "Quintessência", en: "Quintessence" },
+  paradox: { pt: "Paradoxo", en: "Paradox" },
   brawl: { pt: "Briga", en: "Brawl" },
   empathy: { pt: "Empatia", en: "Empathy" },
   expression: { pt: "Expressão", en: "Expression" },
@@ -117,6 +137,7 @@ const messages = {
     language: "Idioma",
     deleteSheet: "Deletar ficha",
     backgroundsCommon: "Antecedentes comuns",
+    customBackground: "Antecedente personalizado",
   },
   en: {
     back: "Back",
@@ -139,6 +160,7 @@ const messages = {
     language: "Language",
     deleteSheet: "Delete sheet",
     backgroundsCommon: "Common backgrounds",
+    customBackground: "Custom background",
   },
 } as const
 
@@ -211,14 +233,25 @@ export default function CharacterDetailPage() {
   const [locale, setLocale] = useState<Locale>("pt")
   const [isSectionsModalOpen, setIsSectionsModalOpen] = useState(false)
   const [backgroundDraft, setBackgroundDraft] = useState<(typeof commonBackgrounds)[number]>(commonBackgrounds[0])
+  const [customBackgroundDraft, setCustomBackgroundDraft] = useState("")
   const [abilityDrafts, setAbilityDrafts] = useState<Record<(typeof abilityCategories)[number], string>>({
     talents: "",
     skills: "",
     knowledges: "",
   })
 
-  const [state, dispatch] = useReducer(characterReducer, selected?.data ?? cloneBaseCharacter())
+  const [state, dispatch] = useReducer(characterReducer, selected?.data ?? cloneBaseCharacter(), (initial) => ({
+    ...initial,
+    magetraits: normalizeMageTraits(initial.magetraits),
+  }))
   const t = messages[locale]
+  const availableBackgrounds = commonBackgrounds.filter((item) => !state.backgrounds[item])
+
+  useEffect(() => {
+    if (availableBackgrounds.length > 0 && !availableBackgrounds.includes(backgroundDraft)) {
+      setBackgroundDraft(availableBackgrounds[0])
+    }
+  }, [availableBackgrounds, backgroundDraft])
 
   useEffect(() => {
     const updated = loadCharacterSheets().map((sheet) =>
@@ -361,10 +394,10 @@ export default function CharacterDetailPage() {
           {state.activeSections.includes("spheres") && (
             <Card>
               <CardHeader><CardTitle>{locale === "pt" ? "Esferas" : "Spheres"}</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="grid gap-3 md:grid-cols-3">
                 {sphereList.map((sphere) => (
                   <div key={sphere} className="flex items-center justify-between gap-2 text-sm">
-                    <Label className="capitalize">{sphere.replace(/_/g, " ")}</Label>
+                    <Label>{getLocalizedStatName(locale, sphere)}</Label>
                     <Dots
                       value={state.spheres[sphere]?.value ?? 0}
                       onChange={(value) => dispatch({ type: "SET_STAT", section: "spheres", key: sphere, value })}
@@ -383,16 +416,41 @@ export default function CharacterDetailPage() {
                   <select
                     value={backgroundDraft}
                     onChange={(event) => setBackgroundDraft(event.target.value as (typeof commonBackgrounds)[number])}
+                    disabled={availableBackgrounds.length === 0}
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
-                    {commonBackgrounds.map((item) => (
-                      <option key={item} value={item}>{item}</option>
-                    ))}
+                    {availableBackgrounds.length > 0 ? (
+                      availableBackgrounds.map((item) => (
+                        <option key={item} value={item}>{getLocalizedStatName(locale, item)}</option>
+                      ))
+                    ) : (
+                      <option value="">{t.noItems}</option>
+                    )}
                   </select>
                   <Button
                     onClick={() => {
+                      if (!backgroundDraft) return
                       if (state.backgrounds[backgroundDraft]) return
                       dispatch({ type: "SET_STAT", section: "backgrounds", key: backgroundDraft, value: 0 })
+                    }}
+                    disabled={availableBackgrounds.length === 0}
+                  >
+                    {t.add}
+                  </Button>
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    value={customBackgroundDraft}
+                    onChange={(event) => setCustomBackgroundDraft(event.target.value)}
+                    placeholder={t.customBackground}
+                  />
+                  <Button
+                    onClick={() => {
+                      const normalized = customBackgroundDraft.trim().toLowerCase().replace(/\s+/g, "_")
+                      if (!normalized || state.backgrounds[normalized]) return
+                      dispatch({ type: "SET_STAT", section: "backgrounds", key: normalized, value: 0 })
+                      setCustomBackgroundDraft("")
                     }}
                   >
                     {t.add}
@@ -401,10 +459,10 @@ export default function CharacterDetailPage() {
 
                 <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: Allies, Influence, Status, Contacts, Mentor, Fame, Resources.</p>
 
-                <div className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-3">
                   {Object.entries(state.backgrounds).map(([key, stat]) => (
                     <div key={key} className="flex items-center justify-between gap-2 text-sm">
-                      <Label className="capitalize">{key.replace(/_/g, " ")}</Label>
+                      <Label>{getLocalizedStatName(locale, key)}</Label>
                       <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
                     </div>
                   ))}
@@ -414,7 +472,17 @@ export default function CharacterDetailPage() {
           )}
 
           {state.activeSections.includes("magetraits") && (
-            <FlatSectionEditor title={locale === "pt" ? "Traços de Mago" : "Mage Traits"} section="magetraits" data={state.magetraits} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
+            <Card>
+              <CardHeader><CardTitle>{locale === "pt" ? "Traços de Mago" : "Mage Traits"}</CardTitle></CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-2">
+                {requiredMageTraits.map((trait) => (
+                  <div key={trait} className="flex items-center justify-between gap-2 text-sm">
+                    <Label>{getLocalizedStatName(locale, trait)}</Label>
+                    <Dots value={state.magetraits[trait]?.value ?? 0} onChange={(value) => dispatch({ type: "SET_STAT", section: "magetraits", key: trait, value })} />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           )}
           {state.activeSections.includes("merits") && (
             <FlatSectionEditor title={locale === "pt" ? "Qualidades" : "Merits"} section="merits" data={state.merits} onAdd={(section, key) => dispatch({ type: "ADD_STAT", section, key })} onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })} addLabel={t.add} emptyLabel={t.noItems} />
