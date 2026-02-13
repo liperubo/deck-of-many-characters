@@ -42,6 +42,29 @@ const abilityCategoryLabels = {
   knowledges: { pt: "Conhecimentos", en: "Knowledges" },
 } as const
 
+
+const sphereLabels = {
+  correspondence: { pt: "Correspondência", en: "Correspondence" },
+  life: { pt: "Vida", en: "Life" },
+  prime: { pt: "Primórdio", en: "Prime" },
+  entropy: { pt: "Entropia", en: "Entropy" },
+  matter: { pt: "Matéria", en: "Matter" },
+  spirit: { pt: "Espírito", en: "Spirit" },
+  forces: { pt: "Forças", en: "Forces" },
+  mind: { pt: "Mente", en: "Mind" },
+  time: { pt: "Tempo", en: "Time" },
+} as const
+
+const backgroundLabels = {
+  allies: { pt: "Aliados", en: "Allies" },
+  influence: { pt: "Influência", en: "Influence" },
+  status: { pt: "Status", en: "Status" },
+  contacts: { pt: "Contatos", en: "Contacts" },
+  mentor: { pt: "Mentor", en: "Mentor" },
+  fame: { pt: "Fama", en: "Fame" },
+  resources: { pt: "Recursos", en: "Resources" },
+} as const
+
 const statLabels = {
   strength: { pt: "Força", en: "Strength" },
   dexterity: { pt: "Destreza", en: "Dexterity" },
@@ -105,6 +128,22 @@ const statLabels = {
   occult: { pt: "Ocultismo", en: "Occult" },
   politics: { pt: "Política", en: "Politics" },
   science: { pt: "Ciência", en: "Science" },
+  correspondence: { pt: "Correspondência", en: "Correspondence" },
+  life: { pt: "Vida", en: "Life" },
+  prime: { pt: "Primórdio", en: "Prime" },
+  entropy: { pt: "Entropia", en: "Entropy" },
+  matter: { pt: "Matéria", en: "Matter" },
+  spirit: { pt: "Espírito", en: "Spirit" },
+  forces: { pt: "Forças", en: "Forces" },
+  mind: { pt: "Mente", en: "Mind" },
+  time: { pt: "Tempo", en: "Time" },
+  allies: { pt: "Aliados", en: "Allies" },
+  influence: { pt: "Influência", en: "Influence" },
+  status: { pt: "Status", en: "Status" },
+  contacts: { pt: "Contatos", en: "Contacts" },
+  mentor: { pt: "Mentor", en: "Mentor" },
+  fame: { pt: "Fama", en: "Fame" },
+  resources: { pt: "Recursos", en: "Resources" },
 } as const
 
 function getLocalizedStatName(locale: Locale, key: string) {
@@ -457,7 +496,7 @@ export default function CharacterDetailPage() {
                   </Button>
                 </div>
 
-                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: Allies, Influence, Status, Contacts, Mentor, Fame, Resources.</p>
+                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: {commonBackgrounds.map((item) => backgroundLabels[item][locale]).join(", ")}.</p>
 
                 <div className="grid gap-3 md:grid-cols-3">
                   {Object.entries(state.backgrounds).map(([key, stat]) => (
