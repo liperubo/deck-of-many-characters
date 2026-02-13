@@ -52,7 +52,7 @@ export default function Home() {
         <header className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-semibold">Deck of Many Characters</h1>
-            <p className="text-muted-foreground">Nova arquitetura de fichas com persistência local, importação e exportação em JSON.</p>
+            <p className="text-muted-foreground">Forje heróis memoráveis, organize suas histórias e leve suas fichas para qualquer mesa.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
