@@ -1,11 +1,13 @@
-// src/domain/character-state.ts
-import { Stats } from "./stat";
-import { ActiveSections } from "./section";
+import { Stats } from "./stat"
+import { ActiveSections } from "./section"
 
 export type CharacterState = {
   name: string
+  chronicle: string
+  concept: string
   nature: string
   demeanor: string
+  notes: string
   attributes: {
     physical: Stats
     social: Stats
@@ -25,11 +27,13 @@ export type CharacterState = {
   activeSections: ActiveSections
 }
 
-export const initialState: CharacterState = {
-  name: "",
+export const baseCharacter: CharacterState = {
+  name: "New Character",
+  chronicle: "",
+  concept: "",
   nature: "",
   demeanor: "",
-
+  notes: "",
   attributes: {
     physical: {
       strength: { value: 1, observation: null },
@@ -47,7 +51,6 @@ export const initialState: CharacterState = {
       wits: { value: 1, observation: null },
     },
   },
-
   abilities: {
     talents: {
       alertness: { value: 0, observation: null },
@@ -60,7 +63,7 @@ export const initialState: CharacterState = {
       intimidation: { value: 0, observation: null },
       leadership: { value: 0, observation: null },
       streetwise: { value: 0, observation: null },
-      subterfuge: { value: 0, observation: null }
+      subterfuge: { value: 0, observation: null },
     },
     skills: {
       crafts: { value: 0, observation: null },
@@ -73,7 +76,7 @@ export const initialState: CharacterState = {
       research: { value: 0, observation: null },
       stealth: { value: 0, observation: null },
       survival: { value: 0, observation: null },
-      technology: { value: 0, observation: null }
+      technology: { value: 0, observation: null },
     },
     knowledges: {
       academics: { value: 0, observation: null },
@@ -86,17 +89,18 @@ export const initialState: CharacterState = {
       medicine: { value: 0, observation: null },
       occult: { value: 0, observation: null },
       politics: { value: 0, observation: null },
-      science: { value: 0, observation: null }
-    }
+      science: { value: 0, observation: null },
+    },
   },
-
   spheres: {},
   magetraits: {},
   backgrounds: {},
   merits: {},
   flaws: {},
-
   tags: [],
-  activeSections: ["attributes", "abilities"] satisfies ActiveSections
+  activeSections: ["attributes", "abilities"],
 }
 
+export function cloneBaseCharacter(): CharacterState {
+  return structuredClone(baseCharacter)
+}
