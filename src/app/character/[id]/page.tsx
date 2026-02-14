@@ -21,7 +21,6 @@ import { backgroundTemplates, flawTemplates, formatTraitTemplate, meritTemplates
 
 const sphereList = ["correspondence", "life", "prime", "entropy", "matter", "spirit", "forces", "mind", "time"] as const
 const removableDefaultAbilities = new Set(["talents", "skills", "knowledges"])
-const commonBackgrounds = ["allies", "influence", "status", "contacts", "mentor", "fame", "resources"] as const
 
 const optionalSections: { key: SectionKey; labelPt: string; labelEn: string }[] = [
   { key: "spheres", labelPt: "Esferas", labelEn: "Spheres" },
@@ -320,6 +319,7 @@ function FlatSectionEditor({
   isEditMode,
   emptyLabel,
   locale,
+  onOpenWiki,
 }: {
   title: string
   section: "backgrounds" | "merits" | "flaws"
@@ -332,6 +332,7 @@ function FlatSectionEditor({
   isEditMode: boolean
   emptyLabel: string
   locale: Locale
+  onOpenWiki?: (key: string) => void
 }) {
   return (
     <Card>
@@ -349,7 +350,20 @@ function FlatSectionEditor({
             const maxValue = stat.maxValue ?? 5
             return (
               <div key={key} className="flex items-center justify-between gap-2">
-                <span className="text-sm">{stat.label ?? getLocalizedStatName(locale, key)}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">{stat.label ?? getLocalizedStatName(locale, key)}</span>
+                  {onOpenWiki && backgroundsWiki[key as keyof typeof backgroundsWiki] && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => onOpenWiki(key)}
+                      aria-label={`${locale === "pt" ? "Abrir wiki de" : "Open wiki for"} ${getLocalizedStatName(locale, key)}`}
+                    >
+                      ?
+                    </Button>
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
                   <Dots
                     value={stat.value}
@@ -385,8 +399,6 @@ export default function CharacterDetailPage() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [isDeleteMode, setIsDeleteMode] = useState(false)
   const [selectedBackgroundWiki, setSelectedBackgroundWiki] = useState<string | null>(null)
-  const [backgroundDraft, setBackgroundDraft] = useState<(typeof commonBackgrounds)[number]>(commonBackgrounds[0])
-  const [customBackgroundDraft, setCustomBackgroundDraft] = useState("")
   const [abilityDrafts, setAbilityDrafts] = useState<Record<(typeof abilityCategories)[number], string>>({
     talents: "",
     skills: "",
@@ -437,7 +449,6 @@ export default function CharacterDetailPage() {
     ? backgroundsWiki[selectedBackgroundWiki as keyof typeof backgroundsWiki]?.[locale]
     : null
   const selectedBackgroundCurrentValue = selectedBackgroundWiki ? state.backgrounds[selectedBackgroundWiki]?.value ?? 0 : 0
-  const availableBackgrounds = commonBackgrounds.filter((item) => !state.backgrounds[item])
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 md:px-8">
@@ -603,93 +614,20 @@ export default function CharacterDetailPage() {
           )}
 
           {state.activeSections.includes("backgrounds") && (
-            <>
-              <Card>
-                <CardHeader><CardTitle>{locale === "pt" ? "Antecedentes" : "Backgrounds"}</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <select
-                    value={backgroundDraft}
-                    onChange={(event) => setBackgroundDraft(event.target.value as (typeof commonBackgrounds)[number])}
-                    disabled={availableBackgrounds.length === 0}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  >
-                    {availableBackgrounds.length > 0 ? (
-                      availableBackgrounds.map((item) => (
-                        <option key={item} value={item}>{getLocalizedStatName(locale, item)}</option>
-                      ))
-                    ) : (
-                      <option value="">{t.noItems}</option>
-                    )}
-                  </select>
-                  <Button
-                    onClick={() => {
-                      if (!backgroundDraft) return
-                      if (state.backgrounds[backgroundDraft]) return
-                      dispatch({ type: "SET_STAT", section: "backgrounds", key: backgroundDraft, value: 0 })
-                    }}
-                    disabled={availableBackgrounds.length === 0}
-                  >
-                    {t.add}
-                  </Button>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    value={customBackgroundDraft}
-                    onChange={(event) => setCustomBackgroundDraft(event.target.value)}
-                    placeholder={t.customBackground}
-                  />
-                  <Button
-                    onClick={() => {
-                      const normalized = customBackgroundDraft.trim().toLowerCase().replace(/\s+/g, "_")
-                      if (!normalized || state.backgrounds[normalized]) return
-                      dispatch({ type: "SET_STAT", section: "backgrounds", key: normalized, value: 0 })
-                      setCustomBackgroundDraft("")
-                    }}
-                  >
-                    {t.add}
-                  </Button>
-                </div>
-
-                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: {commonBackgrounds.map((item) => getLocalizedStatName(locale, item)).join(", ")}.</p>
-
-                <div className="grid gap-3 md:grid-cols-3">
-                  {Object.entries(state.backgrounds).map(([key, stat]) => (
-                    <div key={key} className="flex items-center justify-between gap-2 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Label>{getLocalizedStatName(locale, key)}</Label>
-                        {backgroundsWiki[key as keyof typeof backgroundsWiki] && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => setSelectedBackgroundWiki(key)}
-                            aria-label={`${locale === "pt" ? "Abrir wiki de" : "Open wiki for"} ${getLocalizedStatName(locale, key)}`}
-                          >
-                            ?
-                          </Button>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "backgrounds", key, value })} />
-                        {isDeleteMode && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
-                            aria-label={`Delete ${key}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                </CardContent>
-              </Card>
-            </>
+            <FlatSectionEditor
+              title={locale === "pt" ? "Antecedentes" : "Backgrounds"}
+              section="backgrounds"
+              templates={backgroundTemplates}
+              data={state.backgrounds}
+              onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
+              onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
+              onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
+              deleteMode={isDeleteMode}
+              isEditMode={isEditMode}
+              emptyLabel={t.noItems}
+              locale={locale}
+              onOpenWiki={setSelectedBackgroundWiki}
+            />
           )}
 
           {state.activeSections.includes("magetraits") && (
