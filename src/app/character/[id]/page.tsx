@@ -21,6 +21,7 @@ import { backgroundTemplates, flawTemplates, formatTraitTemplate, meritTemplates
 
 const sphereList = ["correspondence", "life", "prime", "entropy", "matter", "spirit", "forces", "mind", "time"] as const
 const removableDefaultAbilities = new Set(["talents", "skills", "knowledges"])
+const commonBackgrounds = ["allies", "influence", "status", "contacts", "mentor", "fame", "resources"] as const
 
 const optionalSections: { key: SectionKey; labelPt: string; labelEn: string }[] = [
   { key: "spheres", labelPt: "Esferas", labelEn: "Spheres" },
@@ -155,6 +156,8 @@ const messages = {
     editMode: "Modo Edição",
     editing: "Editando",
     readOnly: "Somente leitura",
+    customBackground: "Antecedente personalizado",
+    backgroundsCommon: "Antecedentes comuns",
   },
   en: {
     back: "Back",
@@ -181,6 +184,8 @@ const messages = {
     editMode: "Edit Mode",
     editing: "Editing",
     readOnly: "Read only",
+    customBackground: "Custom background",
+    backgroundsCommon: "Common backgrounds",
   },
 } as const
 
@@ -432,6 +437,7 @@ export default function CharacterDetailPage() {
     ? backgroundsWiki[selectedBackgroundWiki as keyof typeof backgroundsWiki]?.[locale]
     : null
   const selectedBackgroundCurrentValue = selectedBackgroundWiki ? state.backgrounds[selectedBackgroundWiki]?.value ?? 0 : 0
+  const availableBackgrounds = commonBackgrounds.filter((item) => !state.backgrounds[item])
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 md:px-8">
@@ -597,9 +603,10 @@ export default function CharacterDetailPage() {
           )}
 
           {state.activeSections.includes("backgrounds") && (
-            <Card>
-              <CardHeader><CardTitle>{locale === "pt" ? "Antecedentes" : "Backgrounds"}</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
+            <>
+              <Card>
+                <CardHeader><CardTitle>{locale === "pt" ? "Antecedentes" : "Backgrounds"}</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
                 <div className="flex gap-2">
                   <select
                     value={backgroundDraft}
@@ -645,7 +652,7 @@ export default function CharacterDetailPage() {
                   </Button>
                 </div>
 
-                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: {commonBackgrounds.map((item) => backgroundLabels[item][locale]).join(", ")}.</p>
+                <p className="text-xs text-muted-foreground">{t.backgroundsCommon}: {commonBackgrounds.map((item) => getLocalizedStatName(locale, item)).join(", ")}.</p>
 
                 <div className="grid gap-3 md:grid-cols-3">
                   {Object.entries(state.backgrounds).map(([key, stat]) => (
@@ -680,21 +687,22 @@ export default function CharacterDetailPage() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-            <FlatSectionEditor
-              title={locale === "pt" ? "Antecedentes" : "Backgrounds"}
-              section="backgrounds"
-              templates={backgroundTemplates}
-              data={state.backgrounds}
-              onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
-              onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
-              onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
-              deleteMode={isDeleteMode}
-              isEditMode={isEditMode}
-              emptyLabel={t.noItems}
-              locale={locale}
-            />
+                </CardContent>
+              </Card>
+              <FlatSectionEditor
+                title={locale === "pt" ? "Antecedentes" : "Backgrounds"}
+                section="backgrounds"
+                templates={backgroundTemplates}
+                data={state.backgrounds}
+                onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
+                onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
+                onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
+                deleteMode={isDeleteMode}
+                isEditMode={isEditMode}
+                emptyLabel={t.noItems}
+                locale={locale}
+              />
+            </>
           )}
 
           {state.activeSections.includes("magetraits") && (
