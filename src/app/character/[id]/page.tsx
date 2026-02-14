@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useReducer, useState } from "react"
-import { ArrowLeft, Eye, Plus, Trash2, XCircle } from "lucide-react"
+import { ArrowLeft, Eye, Pencil, Plus, Trash2, XCircle } from "lucide-react"
 import { characterReducer } from "@/domain/character-reducer"
 import { cloneBaseCharacter, normalizeActiveSections, normalizeMageTraits, requiredMageTraits } from "@/domain/character-state"
 import { abilityCategories, attributeCategories, FlatStatSection, Stat } from "@/domain/stat"
@@ -152,6 +152,9 @@ const messages = {
     deleteSheet: "Deletar ficha",
     deleteMode: "Modo Remoção",
     deleting: "Apagando",
+    editMode: "Modo Edição",
+    editing: "Editando",
+    readOnly: "Somente leitura",
   },
   en: {
     back: "Back",
@@ -175,6 +178,9 @@ const messages = {
     deleteSheet: "Delete sheet",
     deleteMode: "Delete Mode",
     deleting: "Deleting",
+    editMode: "Edit Mode",
+    editing: "Editing",
+    readOnly: "Read only",
   },
 } as const
 
@@ -306,6 +312,7 @@ function FlatSectionEditor({
   onUpdate,
   onDelete,
   deleteMode,
+  isEditMode,
   emptyLabel,
   locale,
 }: {
@@ -317,6 +324,7 @@ function FlatSectionEditor({
   onUpdate: (section: FlatStatSection, key: string, value: number) => void
   onDelete: (section: FlatStatSection, key: string) => void
   deleteMode: boolean
+  isEditMode: boolean
   emptyLabel: string
   locale: Locale
 }) {
@@ -326,7 +334,7 @@ function FlatSectionEditor({
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <TraitSearchAdd section={section} templates={templates} data={data} onAdd={onAdd} locale={locale} />
+        {isEditMode && <TraitSearchAdd section={section} templates={templates} data={data} onAdd={onAdd} locale={locale} />}
 
         {Object.keys(data).length === 0 && <p className="text-sm text-muted-foreground">{emptyLabel}</p>}
 
@@ -338,8 +346,14 @@ function FlatSectionEditor({
               <div key={key} className="flex items-center justify-between gap-2">
                 <span className="text-sm">{stat.label ?? getLocalizedStatName(locale, key)}</span>
                 <div className="flex items-center gap-2">
-                  <Dots value={stat.value} minDots={minValue} maxDots={maxValue} onChange={(value) => onUpdate(section, key, value)} />
-                  {deleteMode && (
+                  <Dots
+                    value={stat.value}
+                    minDots={minValue}
+                    maxDots={maxValue}
+                    onChange={isEditMode ? (value) => onUpdate(section, key, value) : undefined}
+                    disabled={!isEditMode}
+                  />
+                  {deleteMode && isEditMode && (
                     <Button variant="ghost" size="icon" onClick={() => onDelete(section, key)} aria-label={`Delete ${key}`}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -363,6 +377,7 @@ export default function CharacterDetailPage() {
   const [tagDraft, setTagDraft] = useState("")
   const [locale, setLocale] = useState<Locale>("pt")
   const [isSectionsModalOpen, setIsSectionsModalOpen] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
   const [isDeleteMode, setIsDeleteMode] = useState(false)
   const [selectedBackgroundWiki, setSelectedBackgroundWiki] = useState<string | null>(null)
   const [backgroundDraft, setBackgroundDraft] = useState<(typeof commonBackgrounds)[number]>(commonBackgrounds[0])
@@ -372,6 +387,12 @@ export default function CharacterDetailPage() {
     skills: "",
     knowledges: "",
   })
+
+  useEffect(() => {
+    if (!isEditMode && isDeleteMode) {
+      setIsDeleteMode(false)
+    }
+  }, [isDeleteMode, isEditMode])
 
   const [state, dispatch] = useReducer(characterReducer, selected?.data ?? cloneBaseCharacter(), (initial) => ({
     ...initial,
@@ -443,6 +464,11 @@ export default function CharacterDetailPage() {
 
             <ThemeSwitch />
 
+            <Button variant={isEditMode ? "default" : "outline"} className="w-full justify-start gap-2" onClick={() => setIsEditMode((prev) => !prev)}>
+              <Pencil className="h-4 w-4" />
+              {t.editMode}: {isEditMode ? t.editing : t.readOnly}
+            </Button>
+
             <Button variant={isDeleteMode ? "destructive" : "outline"} className="w-full justify-start gap-2" onClick={() => setIsDeleteMode((prev) => !prev)}>
               <Trash2 className="h-4 w-4" />
               {t.deleteMode}: {isDeleteMode ? t.deleting : "Off"}
@@ -461,11 +487,11 @@ export default function CharacterDetailPage() {
           <Card>
             <CardHeader><CardTitle>{t.identity}</CardTitle></CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              <div><Label>{t.name}</Label><Input value={state.name} onChange={(e) => dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })} /></div>
-              <div><Label>{t.concept}</Label><Input value={state.concept} onChange={(e) => dispatch({ type: "SET_FIELD", field: "concept", value: e.target.value })} /></div>
-              <div><Label>{t.nature}</Label><Input value={state.nature} onChange={(e) => dispatch({ type: "SET_FIELD", field: "nature", value: e.target.value })} /></div>
-              <div><Label>{t.demeanor}</Label><Input value={state.demeanor} onChange={(e) => dispatch({ type: "SET_FIELD", field: "demeanor", value: e.target.value })} /></div>
-              <div className="md:col-span-2"><Label>{t.chronicle}</Label><Input value={state.chronicle} onChange={(e) => dispatch({ type: "SET_FIELD", field: "chronicle", value: e.target.value })} /></div>
+              <div><Label>{t.name}</Label><Input disabled={!isEditMode} value={state.name} onChange={(e) => dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })} /></div>
+              <div><Label>{t.concept}</Label><Input disabled={!isEditMode} value={state.concept} onChange={(e) => dispatch({ type: "SET_FIELD", field: "concept", value: e.target.value })} /></div>
+              <div><Label>{t.nature}</Label><Input disabled={!isEditMode} value={state.nature} onChange={(e) => dispatch({ type: "SET_FIELD", field: "nature", value: e.target.value })} /></div>
+              <div><Label>{t.demeanor}</Label><Input disabled={!isEditMode} value={state.demeanor} onChange={(e) => dispatch({ type: "SET_FIELD", field: "demeanor", value: e.target.value })} /></div>
+              <div className="md:col-span-2"><Label>{t.chronicle}</Label><Input disabled={!isEditMode} value={state.chronicle} onChange={(e) => dispatch({ type: "SET_FIELD", field: "chronicle", value: e.target.value })} /></div>
             </CardContent>
           </Card>
 
@@ -480,7 +506,11 @@ export default function CharacterDetailPage() {
                       {Object.entries(state.attributes[category]).map(([key, stat]) => (
                         <div key={key} className="flex items-center justify-between gap-2 text-sm">
                           <Label>{getLocalizedStatName(locale, key)}</Label>
-                          <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "attributes", category, key, value })} />
+                          <Dots
+                            value={stat.value}
+                            onChange={isEditMode ? (value) => dispatch({ type: "SET_STAT", section: "attributes", category, key, value }) : undefined}
+                            disabled={!isEditMode}
+                          />
                         </div>
                       ))}
                     </CardContent>
@@ -498,35 +528,41 @@ export default function CharacterDetailPage() {
                   <Card key={category} className="bg-secondary/40">
                     <CardHeader><CardTitle className="text-base">{abilityCategoryLabels[category][locale]}</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="flex gap-2">
-                        <Input
-                          value={abilityDrafts[category]}
-                          onChange={(event) => setAbilityDrafts((prev) => ({ ...prev, [category]: event.target.value }))}
-                          placeholder={`${t.add} ${abilityCategoryLabels[category][locale]}`}
-                        />
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            const normalized = abilityDrafts[category].trim().toLowerCase().replace(/\s+/g, "_")
-                            if (!normalized || state.abilities[category][normalized]) return
-                            dispatch({ type: "SET_STAT", section: "abilities", category, key: normalized, value: 0 })
-                            setAbilityDrafts((prev) => ({ ...prev, [category]: "" }))
-                          }}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {isEditMode && (
+                        <div className="flex gap-2">
+                          <Input
+                            value={abilityDrafts[category]}
+                            onChange={(event) => setAbilityDrafts((prev) => ({ ...prev, [category]: event.target.value }))}
+                            placeholder={`${t.add} ${abilityCategoryLabels[category][locale]}`}
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const normalized = abilityDrafts[category].trim().toLowerCase().replace(/\s+/g, "_")
+                              if (!normalized || state.abilities[category][normalized]) return
+                              dispatch({ type: "SET_STAT", section: "abilities", category, key: normalized, value: 0 })
+                              setAbilityDrafts((prev) => ({ ...prev, [category]: "" }))
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
 
                       {Object.entries(state.abilities[category]).map(([key, stat]) => (
                         <div key={key} className="flex items-center justify-between gap-2 text-sm">
                           <Label>{getLocalizedStatName(locale, key)}</Label>
                           <div className="flex items-center gap-2">
-                            <Dots value={stat.value} onChange={(value) => dispatch({ type: "SET_STAT", section: "abilities", category, key, value })} />
+                            <Dots
+                              value={stat.value}
+                              onChange={isEditMode ? (value) => dispatch({ type: "SET_STAT", section: "abilities", category, key, value }) : undefined}
+                              disabled={!isEditMode}
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={!isDeleteMode || removableDefaultAbilities.has(key) ? "invisible" : ""}
-                              disabled={!isDeleteMode || removableDefaultAbilities.has(key)}
+                              className={!isDeleteMode || !isEditMode || removableDefaultAbilities.has(key) ? "invisible" : ""}
+                              disabled={!isDeleteMode || !isEditMode || removableDefaultAbilities.has(key)}
                               onClick={() => dispatch({ type: "DELETE_STAT", section: "abilities", category, key })}
                               aria-label={`Delete ${key}`}
                             >
@@ -551,7 +587,8 @@ export default function CharacterDetailPage() {
                     <Label>{getLocalizedStatName(locale, sphere)}</Label>
                     <Dots
                       value={state.spheres[sphere]?.value ?? 0}
-                      onChange={(value) => dispatch({ type: "SET_STAT", section: "spheres", key: sphere, value })}
+                      onChange={isEditMode ? (value) => dispatch({ type: "SET_STAT", section: "spheres", key: sphere, value }) : undefined}
+                      disabled={!isEditMode}
                     />
                   </div>
                 ))}
@@ -654,6 +691,7 @@ export default function CharacterDetailPage() {
               onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
               onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
               deleteMode={isDeleteMode}
+              isEditMode={isEditMode}
               emptyLabel={t.noItems}
               locale={locale}
             />
@@ -666,7 +704,11 @@ export default function CharacterDetailPage() {
                 {requiredMageTraits.map((trait) => (
                   <div key={trait} className="flex items-center justify-between gap-2 text-sm">
                     <Label>{getLocalizedStatName(locale, trait)}</Label>
-                    <Dots value={state.magetraits[trait]?.value ?? 0} onChange={(value) => dispatch({ type: "SET_STAT", section: "magetraits", key: trait, value })} />
+                    <Dots
+                      value={state.magetraits[trait]?.value ?? 0}
+                      onChange={isEditMode ? (value) => dispatch({ type: "SET_STAT", section: "magetraits", key: trait, value }) : undefined}
+                      disabled={!isEditMode}
+                    />
                   </div>
                 ))}
               </CardContent>
@@ -682,6 +724,7 @@ export default function CharacterDetailPage() {
               onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
               onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: section as "merits" | "flaws", key })}
               deleteMode={isDeleteMode}
+              isEditMode={isEditMode}
               emptyLabel={t.noItems}
               locale={locale}
             />
@@ -696,6 +739,7 @@ export default function CharacterDetailPage() {
               onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
               onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: section as "merits" | "flaws", key })}
               deleteMode={isDeleteMode}
+              isEditMode={isEditMode}
               emptyLabel={t.noItems}
               locale={locale}
             />
@@ -706,8 +750,9 @@ export default function CharacterDetailPage() {
               <CardHeader><CardTitle>Tags</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
-                  <Input value={tagDraft} onChange={(e) => setTagDraft(e.target.value)} placeholder={t.addTag} />
+                  <Input disabled={!isEditMode} value={tagDraft} onChange={(e) => setTagDraft(e.target.value)} placeholder={t.addTag} />
                   <Button
+                    disabled={!isEditMode}
                     onClick={() => {
                       const normalized = tagDraft.trim()
                       if (!normalized) return
@@ -721,7 +766,14 @@ export default function CharacterDetailPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {state.tags.map((tag) => (
-                    <Badge key={tag} className="cursor-pointer" onClick={() => dispatch({ type: "SET_TAGS", tags: state.tags.filter((item) => item !== tag) })}>
+                    <Badge
+                      key={tag}
+                      className={isEditMode ? "cursor-pointer" : "cursor-default"}
+                      onClick={() => {
+                        if (!isEditMode) return
+                        dispatch({ type: "SET_TAGS", tags: state.tags.filter((item) => item !== tag) })
+                      }}
+                    >
                       {tag} ×
                     </Badge>
                   ))}
@@ -733,7 +785,13 @@ export default function CharacterDetailPage() {
           <Card>
             <CardHeader><CardTitle>{t.notes}</CardTitle></CardHeader>
             <CardContent>
-              <Textarea className="min-h-40" value={state.notes} onChange={(e) => dispatch({ type: "SET_FIELD", field: "notes", value: e.target.value })} placeholder={t.notesPlaceholder} />
+              <Textarea
+                className="min-h-40"
+                disabled={!isEditMode}
+                value={state.notes}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "notes", value: e.target.value })}
+                placeholder={t.notesPlaceholder}
+              />
             </CardContent>
           </Card>
         </div>
