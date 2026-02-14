@@ -5,14 +5,13 @@ import { useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useReducer, useState } from "react"
 import { ArrowLeft, Eye, Pencil, Plus, Trash2, XCircle } from "lucide-react"
 import { characterReducer } from "@/domain/character-reducer"
-import { cloneBaseCharacter, normalizeActiveSections, normalizeMageTraits, requiredMageTraits } from "@/domain/character-state"
+import { cloneBaseCharacter, normalizeActiveSections, normalizeLore, normalizeMageTraits, requiredMageTraits } from "@/domain/character-state"
 import { abilityCategories, attributeCategories, FlatStatSection, Stat } from "@/domain/stat"
 import Dots from "@/components/Dots"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { loadCharacterSheets, saveCharacterSheets } from "@/storage/characterStorage"
 import { SectionKey } from "@/domain/section"
@@ -137,11 +136,11 @@ const messages = {
     identity: "Identidade da Ficha",
     attributes: "Atributos",
     abilities: "Habilidades",
-    notes: "Anotações",
+    lore: "Lore",
     add: "Adicionar",
     addTag: "Adicionar tag",
     noItems: "Sem itens nesta seção.",
-    notesPlaceholder: "Histórico, objetivos, observações da campanha...",
+    lorePlaceholder: "<h1>Capítulo 1</h1><p>Era uma vez...</p>",
     name: "Nome",
     concept: "Conceito",
     nature: "Natureza",
@@ -150,13 +149,11 @@ const messages = {
     openSections: "Seções",
     language: "Idioma",
     deleteSheet: "Deletar ficha",
-    deleteMode: "Modo Remoção",
-    deleting: "Apagando",
+    readMode: "Modo Leitura",
     editMode: "Modo Edição",
-    editing: "Editando",
-    readOnly: "Somente leitura",
     customBackground: "Antecedente personalizado",
     backgroundsCommon: "Antecedentes comuns",
+    remove: "Remover",
   },
   en: {
     back: "Back",
@@ -165,11 +162,11 @@ const messages = {
     identity: "Character Identity",
     attributes: "Attributes",
     abilities: "Abilities",
-    notes: "Notes",
+    lore: "Lore",
     add: "Add",
     addTag: "Add tag",
     noItems: "No items in this section.",
-    notesPlaceholder: "Backstory, goals, campaign observations...",
+    lorePlaceholder: "<h1>Chapter 1</h1><p>Once upon a time...</p>",
     name: "Name",
     concept: "Concept",
     nature: "Nature",
@@ -178,13 +175,11 @@ const messages = {
     openSections: "Sections",
     language: "Language",
     deleteSheet: "Delete sheet",
-    deleteMode: "Delete Mode",
-    deleting: "Deleting",
+    readMode: "Read Mode",
     editMode: "Edit Mode",
-    editing: "Editing",
-    readOnly: "Read only",
     customBackground: "Custom background",
     backgroundsCommon: "Common backgrounds",
+    remove: "Remove",
   },
 } as const
 
@@ -315,7 +310,6 @@ function FlatSectionEditor({
   onAdd,
   onUpdate,
   onDelete,
-  deleteMode,
   isEditMode,
   emptyLabel,
   locale,
@@ -328,7 +322,6 @@ function FlatSectionEditor({
   onAdd: (section: "backgrounds" | "merits" | "flaws", key: string, stat: Stat) => void
   onUpdate: (section: FlatStatSection, key: string, value: number) => void
   onDelete: (section: FlatStatSection, key: string) => void
-  deleteMode: boolean
   isEditMode: boolean
   emptyLabel: string
   locale: Locale
@@ -372,7 +365,7 @@ function FlatSectionEditor({
                     onChange={isEditMode ? (value) => onUpdate(section, key, value) : undefined}
                     disabled={!isEditMode}
                   />
-                  {deleteMode && isEditMode && (
+                  {isEditMode && (
                     <Button variant="ghost" size="icon" onClick={() => onDelete(section, key)} aria-label={`Delete ${key}`}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -397,7 +390,6 @@ export default function CharacterDetailPage() {
   const [locale, setLocale] = useState<Locale>("pt")
   const [isSectionsModalOpen, setIsSectionsModalOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
-  const [isDeleteMode, setIsDeleteMode] = useState(false)
   const [selectedBackgroundWiki, setSelectedBackgroundWiki] = useState<string | null>(null)
   const [abilityDrafts, setAbilityDrafts] = useState<Record<(typeof abilityCategories)[number], string>>({
     talents: "",
@@ -405,16 +397,12 @@ export default function CharacterDetailPage() {
     knowledges: "",
   })
 
-  useEffect(() => {
-    if (!isEditMode && isDeleteMode) {
-      setIsDeleteMode(false)
-    }
-  }, [isDeleteMode, isEditMode])
 
   const [state, dispatch] = useReducer(characterReducer, selected?.data ?? cloneBaseCharacter(), (initial) => ({
     ...initial,
     magetraits: normalizeMageTraits(initial.magetraits),
     activeSections: normalizeActiveSections(initial.activeSections),
+    lore: normalizeLore(initial.lore, (initial as { notes?: string }).notes),
   }))
   const t = messages[locale]
   useEffect(() => {
@@ -483,13 +471,9 @@ export default function CharacterDetailPage() {
 
             <Button variant={isEditMode ? "default" : "outline"} className="w-full justify-start gap-2" onClick={() => setIsEditMode((prev) => !prev)}>
               <Pencil className="h-4 w-4" />
-              {t.editMode}: {isEditMode ? t.editing : t.readOnly}
+              {isEditMode ? t.readMode : t.editMode}
             </Button>
 
-            <Button variant={isDeleteMode ? "destructive" : "outline"} className="w-full justify-start gap-2" onClick={() => setIsDeleteMode((prev) => !prev)}>
-              <Trash2 className="h-4 w-4" />
-              {t.deleteMode}: {isDeleteMode ? t.deleting : "Off"}
-            </Button>
 
             <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleDeleteSheet}>
               <XCircle className="h-4 w-4" />
@@ -578,8 +562,8 @@ export default function CharacterDetailPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={!isDeleteMode || !isEditMode || removableDefaultAbilities.has(key) ? "invisible" : ""}
-                              disabled={!isDeleteMode || !isEditMode || removableDefaultAbilities.has(key)}
+                              className={!isEditMode || removableDefaultAbilities.has(key) ? "invisible" : ""}
+                              disabled={!isEditMode || removableDefaultAbilities.has(key)}
                               onClick={() => dispatch({ type: "DELETE_STAT", section: "abilities", category, key })}
                               aria-label={`Delete ${key}`}
                             >
@@ -622,7 +606,6 @@ export default function CharacterDetailPage() {
               onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
               onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
               onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
-              deleteMode={isDeleteMode}
               isEditMode={isEditMode}
               emptyLabel={t.noItems}
               locale={locale}
@@ -656,7 +639,6 @@ export default function CharacterDetailPage() {
               onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
               onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
               onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: section as "merits" | "flaws", key })}
-              deleteMode={isDeleteMode}
               isEditMode={isEditMode}
               emptyLabel={t.noItems}
               locale={locale}
@@ -671,7 +653,6 @@ export default function CharacterDetailPage() {
               onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
               onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
               onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: section as "merits" | "flaws", key })}
-              deleteMode={isDeleteMode}
               isEditMode={isEditMode}
               emptyLabel={t.noItems}
               locale={locale}
@@ -714,15 +695,45 @@ export default function CharacterDetailPage() {
           )}
 
           <Card>
-            <CardHeader><CardTitle>{t.notes}</CardTitle></CardHeader>
-            <CardContent>
-              <Textarea
-                className="min-h-40"
-                disabled={!isEditMode}
-                value={state.notes}
-                onChange={(e) => dispatch({ type: "SET_FIELD", field: "notes", value: e.target.value })}
-                placeholder={t.notesPlaceholder}
-              />
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>{t.lore}</CardTitle>
+              {isEditMode && (
+                <Button
+                  size="sm"
+                  onClick={() => dispatch({ type: "ADD_LORE", entry: { id: crypto.randomUUID(), content: "" } })}
+                >
+                  <Plus className="h-4 w-4" />
+                  {t.add}
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {state.lore.length === 0 && <p className="text-sm text-muted-foreground">{t.noItems}</p>}
+              {state.lore.map((entry, index) => (
+                <details key={entry.id} className="rounded-md border border-border" open={isEditMode}>
+                  <summary className="cursor-pointer px-3 py-2 text-sm font-medium">
+                    {t.lore} #{index + 1}
+                  </summary>
+                  <div className="space-y-3 border-t border-border p-3">
+                    {isEditMode ? (
+                      <>
+                        <textarea
+                          className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={entry.content}
+                          onChange={(event) => dispatch({ type: "UPDATE_LORE", id: entry.id, content: event.target.value })}
+                          placeholder={t.lorePlaceholder}
+                        />
+                        <Button variant="ghost" size="sm" onClick={() => dispatch({ type: "DELETE_LORE", id: entry.id })}>
+                          <Trash2 className="mr-1 h-4 w-4 text-destructive" />
+                          {t.remove}
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: entry.content }} />
+                    )}
+                  </div>
+                </details>
+              ))}
             </CardContent>
           </Card>
         </div>

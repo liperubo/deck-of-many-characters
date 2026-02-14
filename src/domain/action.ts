@@ -1,4 +1,4 @@
-import { CharacterState } from "./character-state"
+import { CharacterState, LoreEntry } from "./character-state"
 import { SectionKey, StatSectionKey } from "./section"
 import { AbilityCategory, AttributeCategory, Stat } from "./stat"
 
@@ -13,7 +13,7 @@ export type Action =
     }
   | {
       type: "SET_FIELD"
-      field: "name" | "chronicle" | "concept" | "nature" | "demeanor" | "notes"
+      field: "name" | "chronicle" | "concept" | "nature" | "demeanor"
       value: string
     }
   | {
@@ -23,5 +23,8 @@ export type Action =
       key: string
       value: number
     }
+  | { type: "ADD_LORE"; entry: LoreEntry }
+  | { type: "UPDATE_LORE"; id: string; content: string }
+  | { type: "DELETE_LORE"; id: string }
   | { type: "SET_TAGS"; tags: string[] }
   | { type: "TOGGLE_SECTION"; section: SectionKey }

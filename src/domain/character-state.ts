@@ -4,6 +4,11 @@ import { ActiveSections } from "./section"
 export const requiredMageTraits = ["arete", "willpower", "quintessence", "paradox"] as const
 export const defaultVisibleSections = ["attributes", "abilities", "backgrounds", "merits", "flaws", "tags"] as const
 
+export type LoreEntry = {
+  id: string
+  content: string
+}
+
 function buildRequiredMageTraits(): Stats {
   return Object.fromEntries(requiredMageTraits.map((trait) => [trait, { value: 0, observation: null }]))
 }
@@ -14,7 +19,7 @@ export type CharacterState = {
   concept: string
   nature: string
   demeanor: string
-  notes: string
+  lore: LoreEntry[]
   attributes: {
     physical: Stats
     social: Stats
@@ -40,7 +45,7 @@ export const baseCharacter: CharacterState = {
   concept: "",
   nature: "",
   demeanor: "",
-  notes: "",
+  lore: [],
   attributes: {
     physical: {
       strength: { value: 1, observation: null },
@@ -110,6 +115,19 @@ export const baseCharacter: CharacterState = {
 
 export function cloneBaseCharacter(): CharacterState {
   return structuredClone(baseCharacter)
+}
+
+export function normalizeLore(lore: LoreEntry[] | undefined, notes: string | undefined): LoreEntry[] {
+  if (Array.isArray(lore)) {
+    return lore
+      .filter((entry) => typeof entry?.id === "string" && typeof entry?.content === "string")
+      .map((entry) => ({ id: entry.id, content: entry.content }))
+  }
+
+  const legacyNotes = notes?.trim()
+  if (!legacyNotes) return []
+
+  return [{ id: crypto.randomUUID(), content: legacyNotes }]
 }
 
 export function normalizeMageTraits(magetraits: Stats): Stats {
