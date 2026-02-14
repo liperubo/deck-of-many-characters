@@ -53,6 +53,24 @@ export function characterReducer(state: CharacterState, action: Action): Charact
       }
     }
 
+    case "ADD_LORE":
+      return {
+        ...state,
+        lore: [...state.lore, action.entry],
+      }
+
+    case "UPDATE_LORE":
+      return {
+        ...state,
+        lore: state.lore.map((entry) => (entry.id === action.id ? { ...entry, content: action.content } : entry)),
+      }
+
+    case "DELETE_LORE":
+      return {
+        ...state,
+        lore: state.lore.filter((entry) => entry.id !== action.id),
+      }
+
     case "SET_TAGS":
       return { ...state, tags: action.tags }
 
