@@ -689,19 +689,6 @@ export default function CharacterDetailPage() {
                 </div>
                 </CardContent>
               </Card>
-              <FlatSectionEditor
-                title={locale === "pt" ? "Antecedentes" : "Backgrounds"}
-                section="backgrounds"
-                templates={backgroundTemplates}
-                data={state.backgrounds}
-                onAdd={(section, key, stat) => dispatch({ type: "ADD_STAT", section, key, stat })}
-                onUpdate={(section, key, value) => dispatch({ type: "SET_STAT", section, key, value })}
-                onDelete={(section, key) => dispatch({ type: "DELETE_STAT", section: "backgrounds", key })}
-                deleteMode={isDeleteMode}
-                isEditMode={isEditMode}
-                emptyLabel={t.noItems}
-                locale={locale}
-              />
             </>
           )}
 
@@ -762,6 +749,7 @@ export default function CharacterDetailPage() {
                   <Button
                     disabled={!isEditMode}
                     onClick={() => {
+                      if (!isEditMode) return
                       const normalized = tagDraft.trim()
                       if (!normalized) return
                       if (state.tags.some((tag) => tag.toLowerCase() === normalized.toLowerCase())) return
@@ -777,12 +765,9 @@ export default function CharacterDetailPage() {
                     <Badge
                       key={tag}
                       className={isEditMode ? "cursor-pointer" : "cursor-default"}
-                      onClick={() => {
-                        if (!isEditMode) return
-                        dispatch({ type: "SET_TAGS", tags: state.tags.filter((item) => item !== tag) })
-                      }}
+                      onClick={isEditMode ? () => dispatch({ type: "SET_TAGS", tags: state.tags.filter((item) => item !== tag) }) : undefined}
                     >
-                      {tag} ×
+                      {tag}{isEditMode ? " ×" : ""}
                     </Badge>
                   ))}
                 </div>
