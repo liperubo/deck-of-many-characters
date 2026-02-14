@@ -49,6 +49,20 @@ export default function Home() {
   }
 
   const normalizedSearch = searchTerm.trim().toLowerCase()
+  const tagSuggestions = Array.from(
+    sheets.reduce((acc, sheet) => {
+      sheet.data.tags.forEach((tag) => {
+        const normalized = tag.trim()
+        if (!normalized) return
+        const key = normalized.toLowerCase()
+        if (!acc.has(key)) acc.set(key, normalized)
+      })
+      return acc
+    }, new Map<string, string>()),
+  )
+    .map(([, tag]) => tag)
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+
   const filteredSheets = normalizedSearch
     ? sheets.filter((sheet) => {
         const nameMatch = sheet.data.name.toLowerCase().includes(normalizedSearch)
@@ -99,7 +113,13 @@ export default function Home() {
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Pesquisar por nome ou tag"
             className="pl-10"
+            list="tag-suggestions"
           />
+          <datalist id="tag-suggestions">
+            {tagSuggestions.map((tag) => (
+              <option key={tag} value={tag} />
+            ))}
+          </datalist>
         </div>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -307,6 +307,75 @@ function TraitSearchAdd({
   )
 }
 
+function TagSearchAdd({
+  tags,
+  existingTags,
+  onAdd,
+  locale,
+}: {
+  tags: string[]
+  existingTags: string[]
+  onAdd: (tag: string) => void
+  locale: Locale
+}) {
+  const [query, setQuery] = useState("")
+  const normalizedQuery = query.trim().toLowerCase()
+
+  const suggestions = tags.filter((tag) => {
+    if (!normalizedQuery) return true
+    return tag.toLowerCase().includes(normalizedQuery)
+  })
+
+  const addTag = (tag: string) => {
+    const normalizedTag = tag.trim()
+    if (!normalizedTag) return
+    if (existingTags.some((item) => item.toLowerCase() === normalizedTag.toLowerCase())) return
+    onAdd(normalizedTag)
+    setQuery("")
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={locale === "pt" ? "Buscar ou criar" : "Search or create"}
+        />
+        <Button onClick={() => addTag(query)} disabled={!normalizedQuery}>
+          {locale === "pt" ? "Criar" : "Create"}
+        </Button>
+      </div>
+
+      {normalizedQuery && !suggestions.some((item) => item.toLowerCase() === normalizedQuery) && (
+        <Button variant="outline" size="sm" onClick={() => addTag(query)} className="w-full justify-start">
+          {locale === "pt" ? `Adicionar "${query.trim()}" nesta ficha` : `Add "${query.trim()}" to this sheet`}
+        </Button>
+      )}
+
+      {suggestions.length > 0 && (
+        <div className="max-h-44 space-y-2 overflow-auto rounded-md border border-border p-2">
+          {suggestions.map((tag) => {
+            const alreadyAdded = existingTags.some((item) => item.toLowerCase() === tag.toLowerCase())
+            return (
+              <Button
+                key={tag}
+                variant="ghost"
+                size="sm"
+                className="h-auto w-full justify-start whitespace-normal text-left"
+                onClick={() => addTag(tag)}
+                disabled={alreadyAdded}
+              >
+                {tag}
+              </Button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function FlatSectionEditor({
   title,
   section,
@@ -393,7 +462,6 @@ export default function CharacterDetailPage() {
   const characterId = params.id
   const sheets = useMemo(() => loadCharacterSheets(), [])
   const selected = sheets.find((sheet) => sheet.id === characterId)
-  const [tagDraft, setTagDraft] = useState("")
   const [locale, setLocale] = useState<Locale>("pt")
   const [isSectionsModalOpen, setIsSectionsModalOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -449,6 +517,28 @@ export default function CharacterDetailPage() {
     ? backgroundsWiki[selectedBackgroundWiki as keyof typeof backgroundsWiki]?.[locale]
     : null
   const selectedBackgroundCurrentValue = selectedBackgroundWiki ? state.backgrounds[selectedBackgroundWiki]?.value ?? 0 : 0
+  const availableTags = useMemo(() => {
+    const uniqueTags = new Map<string, string>()
+    sheets.forEach((sheet) => {
+      sheet.data.tags.forEach((tag) => {
+        const normalized = tag.trim()
+        if (!normalized) return
+        const key = normalized.toLowerCase()
+        if (!uniqueTags.has(key)) {
+          uniqueTags.set(key, normalized)
+        }
+      })
+    })
+    state.tags.forEach((tag) => {
+      const normalized = tag.trim()
+      if (!normalized) return
+      const key = normalized.toLowerCase()
+      if (!uniqueTags.has(key)) {
+        uniqueTags.set(key, normalized)
+      }
+    })
+    return Array.from(uniqueTags.values()).sort((a, b) => a.localeCompare(b, locale === "pt" ? "pt-BR" : "en-US"))
+  }, [locale, sheets, state.tags])
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 md:px-8">
@@ -682,22 +772,14 @@ export default function CharacterDetailPage() {
             <Card>
               <CardHeader><CardTitle>Tags</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input disabled={!isEditMode} value={tagDraft} onChange={(e) => setTagDraft(e.target.value)} placeholder={t.addTag} />
-                  <Button
-                    disabled={!isEditMode}
-                    onClick={() => {
-                      if (!isEditMode) return
-                      const normalized = tagDraft.trim()
-                      if (!normalized) return
-                      if (state.tags.some((tag) => tag.toLowerCase() === normalized.toLowerCase())) return
-                      dispatch({ type: "SET_TAGS", tags: [...state.tags, normalized] })
-                      setTagDraft("")
-                    }}
-                  >
-                    {t.add}
-                  </Button>
-                </div>
+                {isEditMode && (
+                  <TagSearchAdd
+                    tags={availableTags}
+                    existingTags={state.tags}
+                    locale={locale}
+                    onAdd={(tag) => dispatch({ type: "SET_TAGS", tags: [...state.tags, tag] })}
+                  />
+                )}
                 <div className="flex flex-wrap gap-2">
                   {state.tags.map((tag) => (
                     <Badge
